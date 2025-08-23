@@ -246,7 +246,7 @@ async function detectIssues(targetRepo: string, category?: string): Promise<Tran
           execSync("go build ./...", { stdio: "pipe" });
         } catch (error: any) {
           const output = error.stdout?.toString() || error.stderr?.toString() || "";
-          const errorLines = output.split("\n").filter((line: string) => line.includes("error"));
+          const errorLines = output.split("\n").filter((line: string) => line.length > 0 && (line.includes("error") || line.includes("undefined") || line.includes("cannot use")));
           
           errorLines.forEach((line: string) => {
             issues.push({
@@ -357,23 +357,30 @@ Start by examining the target repository structure and the specific files mentio
     let result = "";
     let hasError = false;
     
-    for await (const message of query({
-      prompt,
-      cwd: targetRepo,
-    })) {
-      if (message.type === "result") {
-        if (message.is_error) {
-          hasError = true;
-          console.error(chalk.red(`❌ Error from Claude: ${message.result || "Unknown error"}`));
-          throw new Error(message.result || "Claude SDK error");
+    // Change to target directory for Claude to have access
+    const originalCwd = process.cwd();
+    process.chdir(targetRepo);
+    
+    try {
+      for await (const message of query({
+        prompt,
+      })) {
+        if (message.type === "result") {
+          if (message.is_error) {
+            hasError = true;
+            console.error(chalk.red(`❌ Error from Claude: ${(message as any).result || "Unknown error"}`));
+            throw new Error((message as any).result || "Claude SDK error");
+          }
+          result = (message as any).result || "";
+          break; // Exit loop after getting result
         }
-        result = message.result || "";
-        break; // Exit loop after getting result
+        // Handle assistant messages with tool calls
+        if (message.type === "assistant" && (message as any).message?.content?.[0]?.name) {
+          process.stdout.write(".");
+        }
       }
-      // Handle other message types if needed
-      if (message.type === "stream") {
-        process.stdout.write(".");
-      }
+    } finally {
+      process.chdir(originalCwd);
     }
 
     if (!hasError && result) {
@@ -398,6 +405,9 @@ Start by examining the target repository structure and the specific files mentio
     }
   } catch (error: any) {
     console.error(chalk.red(`\n❌ Failed to fix issues: ${error.message}`));
-    process.exit(1);
+    if (process.env.NODE_ENV !== "test") {
+      process.exit(1);
+    }
+    throw error;
   }
 }
