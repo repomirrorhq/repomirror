@@ -30,7 +30,7 @@ will do the following steps, with a big prompt into claude code headless or amp
 - review everything in $SOURCE_REPO using as many subagents as possible, focus on understand:
     - the public interfaces
     - how information flows through the system
-    - inspiration from 
+    - inspiration from https://github.com/humanlayer/humanlayer/blob/main/.claude/commands/research_codebase.md
 - review everything in $TARGET_REPO using as many subagents as possible, focus on understand:
     - ..
 - pick the highest priority item from @IMPLEMENTATION_PLAN.md and implement the migration from ./ to ../assistant-ui-vuejs according to $INSTRUCTIONS
@@ -46,5 +46,5 @@ while you're working, write any intermediate may be written to .repomirror/*.md
 
 - ./remote_sync.md - able to push/pull from remote repos instead of just two local dirs
 - ./github_actions_install.md - `npx repomirror install-github` sets up github actions to do the sync on every pr merge
-- ./issue_fixer.md - watch open issues in a loop
+- ./issue_fixer.md - watch open issues in a loop  with research/plan/implement
 
