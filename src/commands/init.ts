@@ -1,5 +1,5 @@
 import { promises as fs } from "fs";
-import { join, basename } from "path";
+import path, { join, basename, resolve } from "path";
 import inquirer from "inquirer";
 import chalk from "chalk";
 import ora from "ora";
@@ -238,35 +238,39 @@ async function performPreflightChecks(targetRepo: string): Promise<void> {
     process.exit(1);
   }
 
-  // Check if Claude Code is configured
-  console.log(chalk.white("4. Testing Claude Code configuration..."));
-  const claudeSpinner = ora("   Running Claude Code test command").start();
-  try {
-    const { stdout } = await execa("claude", ["-p", "say hi"]);
-    if (!stdout.toLowerCase().includes("hi")) {
-      claudeSpinner.fail(
-        "   Claude Code test failed - response doesn't contain 'hi'",
-      );
+  // Check if Claude Code is configured (skip in test mode)
+  if (process.env.SKIP_CLAUDE_TEST === "true") {
+    console.log(chalk.yellow("4. Skipping Claude Code test (test mode)"));
+  } else {
+    console.log(chalk.white("4. Testing Claude Code configuration..."));
+    const claudeSpinner = ora("   Running Claude Code test command").start();
+    try {
+      const { stdout } = await execa("claude", ["-p", "say hi"]);
+      if (!stdout.toLowerCase().includes("hi")) {
+        claudeSpinner.fail(
+          "   Claude Code test failed - response doesn't contain 'hi'",
+        );
+        console.log(
+          chalk.gray(
+            `   Actual response: ${stdout.slice(0, 100)}${stdout.length > 100 ? "..." : ""}`,
+          ),
+        );
+        process.exit(1);
+      }
+      claudeSpinner.succeed("   Claude Code is working correctly");
       console.log(
         chalk.gray(
-          `   Actual response: ${stdout.slice(0, 100)}${stdout.length > 100 ? "..." : ""}`,
+          `   Claude response: ${stdout.slice(0, 100)}${stdout.length > 100 ? "..." : ""}`,
         ),
       );
+    } catch (error) {
+      claudeSpinner.fail("   Claude Code is not properly configured");
+      console.log(chalk.red("   Please run `claude` to set up your profile"));
+      if (error instanceof Error) {
+        console.log(chalk.gray(`   Error: ${error.message}`));
+      }
       process.exit(1);
     }
-    claudeSpinner.succeed("   Claude Code is working correctly");
-    console.log(
-      chalk.gray(
-        `   Claude response: ${stdout.slice(0, 100)}${stdout.length > 100 ? "..." : ""}`,
-      ),
-    );
-  } catch (error) {
-    claudeSpinner.fail("   Claude Code is not properly configured");
-    console.log(chalk.red("   Please run `claude` to set up your profile"));
-    if (error instanceof Error) {
-      console.log(chalk.gray(`   Error: ${error.message}`));
-    }
-    process.exit(1);
   }
 
   console.log(chalk.green("\n✅ All preflight checks passed!\n"));
@@ -277,6 +281,20 @@ async function generateTransformationPrompt(
   targetRepo: string,
   transformationInstructions: string,
 ): Promise<string> {
+  // In test mode, return a simple template without calling Claude
+  if (process.env.SKIP_CLAUDE_TEST === "true") {
+    const testPrompt = `Your job is to port ${sourceRepo} to ${targetRepo} and maintain the repository.
+
+You have access to the current ${sourceRepo} repository as well as the ${targetRepo} repository.
+
+Make a commit and push your changes after every single file edit.
+
+Use the ${targetRepo}/agent/ directory as a scratchpad for your work. Store long term plans and todo lists there.
+
+${transformationInstructions}`;
+    return testPrompt;
+  }
+
   const metaPrompt = `your task is to generate an optimized prompt for repo transformation. The prompt should match the format of the examples below.
 
 <example 1>

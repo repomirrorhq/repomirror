@@ -31,11 +31,14 @@
   - Implemented `push` command with auto-commit and multi-remote support
   - Implemented `pull` command with source sync integration
   - Enhanced sync commands with auto-push capabilities
-- [ ] GitHub Actions integration
+- [x] Add validation script for init command ✅
+  - Created `hack/ralph-validate.sh` for automated testing
+  - Added SKIP_CLAUDE_TEST environment variable for testing mode
+- [ ] GitHub Actions integration  
 - [ ] Issue fixer functionality
 
 ## Current Status
-Completed core implementation with remote repository support:
+Completed core implementation with remote repository support and validation:
 - All CLI commands implemented and working
 - Init command creates proper .repomirror/ structure
 - Sync commands execute shell scripts correctly
@@ -44,8 +47,11 @@ Completed core implementation with remote repository support:
 - **NEW: Push command with intelligent commit messages and multi-remote support**
 - **NEW: Pull command with auto-sync integration**
 - **NEW: Auto-push capability after sync operations**
-- Comprehensive test suite with 242+ tests covering all commands including new remote features
+- **NEW: Validation script for testing init command functionality**
+- **NEW: Test mode support with SKIP_CLAUDE_TEST environment variable**
+- Comprehensive test suite with 242 tests covering all commands including new remote features
 - TypeScript build passing
+- Validation script confirms init command working correctly
 - Ready for production usage with full remote repository workflow
 
 ## Known Issues & Critical Fixes Needed
@@ -63,3 +69,10 @@ Completed core implementation with remote repository support:
 - All 230 tests passing (comprehensive test coverage added)
 - TypeScript build successful
 - Ready for production use
+
+## Testing Instructions
+
+For testing the init command without calling Claude SDK:
+- Set `SKIP_CLAUDE_TEST=true` environment variable
+- This will skip the Claude Code preflight check and use a test prompt template
+- The validation script `hack/ralph-validate.sh` uses this flag for automated testing
