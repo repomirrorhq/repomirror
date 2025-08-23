@@ -9,6 +9,8 @@ import { remote } from "./commands/remote";
 import { push } from "./commands/push";
 import { pull } from "./commands/pull";
 import { githubActions } from "./commands/github-actions";
+import { setupGithubPrSync } from "./commands/setup-github-pr-sync";
+import { dispatchSync } from "./commands/dispatch-sync";
 import { issueFixer } from "./commands/issue-fixer";
 
 const program = new Command();
@@ -177,6 +179,73 @@ Notes:
     workflowName: options.name,
     schedule: options.schedule,
     autoPush: options.autoPush,
+  }));
+
+program
+  .command("setup-github-pr-sync")
+  .description("Setup GitHub Actions workflow for PR-triggered sync")
+  .option("-t, --target-repo <repo>", "Target repository (owner/repo format)")
+  .option("-l, --times-to-loop <number>", "Number of times to loop sync-one command", "3")
+  .option("--overwrite", "Force overwrite existing workflow file")
+  .addHelpText(
+    "after",
+    `
+Sets up a GitHub Actions workflow that runs sync-one command on PR merges.
+
+Examples:
+  $ npx repomirror setup-github-pr-sync
+      Interactive setup with prompts
+  
+  $ npx repomirror setup-github-pr-sync --target-repo myorg/myrepo
+      Specify target repository directly
+  
+  $ npx repomirror setup-github-pr-sync --times-to-loop 5
+      Set number of sync iterations
+  
+  $ npx repomirror setup-github-pr-sync --overwrite
+      Force overwrite existing workflow file
+
+Notes:
+  - Creates .github/workflows/repomirror.yml
+  - Settings are persisted to repomirror.yaml
+  - Workflow has workflow_dispatch trigger for manual runs
+  - Requires ANTHROPIC_API_KEY and GITHUB_TOKEN secrets`,
+  )
+  .action((options) => setupGithubPrSync({
+    targetRepo: options.targetRepo,
+    timesToLoop: options.timesToLoop ? parseInt(options.timesToLoop) : undefined,
+    overwrite: options.overwrite,
+  }));
+
+program
+  .command("dispatch-sync")
+  .description("Dispatch GitHub Actions workflow for manual sync")
+  .option("-y, --yes", "Skip confirmation prompt")
+  .option("-q, --quiet", "Suppress output (requires --yes)")
+  .addHelpText(
+    "after",
+    `
+Dispatches a workflow_dispatch event to the repomirror.yml workflow.
+
+Examples:
+  $ npx repomirror dispatch-sync
+      Interactive mode with confirmation prompt
+  
+  $ npx repomirror dispatch-sync --yes
+      Skip confirmation and dispatch immediately
+  
+  $ npx repomirror dispatch-sync --yes --quiet
+      Silent dispatch without output
+
+Notes:
+  - Requires .github/workflows/repomirror.yml to exist
+  - Requires GitHub CLI (gh) to be installed and authenticated
+  - Workflow must have workflow_dispatch trigger enabled
+  - --quiet flag can only be used with --yes flag`,
+  )
+  .action((options) => dispatchSync({
+    yes: options.yes,
+    quiet: options.quiet,
   }));
 
 program
