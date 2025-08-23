@@ -4,7 +4,7 @@ A tool to perform transformations on code repositories with AI. Inspired by [@gh
 
 Some example projects maintained by repomirror:
 
-- [browser-use-ts](https://github.com/yonom/browser-use-ts) - A port of browser-use to typescript
+- [better-use](https://github.com/yonom/browser-use-ts) - A port of browser-use to typescript
 - [ai-sdk-python](https://github.com/yonom/ai-sdk-python) - Port of vercel AI sdk to python
 - [assistant-ui-vue](https://github.com/yonom/assistant-ui-vue) - Port of assistant-ui-react to vue.js
 - [openconvex](https://github.com/dexhorthy/openconvex) - TS implementation of convex using `llms-full.txt`
