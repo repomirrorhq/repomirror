@@ -91,7 +91,6 @@ add the following files to the source repo in .repomirror/
 - .repomirror/prompt.md # contents from the prompt
 - .repomirror/sync.sh
 - .repomirror/ralph.sh
-- .repomirror/visualize.js
 - .repomirror/.gitignore
 
 .repomirror/.gitignore has the exact below contents:
@@ -104,7 +103,7 @@ sync.sh has the exact below contents:
 cat .repomirror/prompt.md | \
         claude -p --output-format=stream-json --verbose --dangerously-skip-permissions --add-dir PATH_TO_TARGET_REPO | \
         tee -a .repomirror/claude_output.jsonl | \
-        node .repomirror/visualize.js --debug;
+        npx repomirror visualize --debug;
 ```
 
 ralph.sh has the exact below contents:
@@ -117,9 +116,9 @@ sleep 10;
 done
 ```
 
-visualize.js is a transpiled version of ../hack/visualize.ts that can be run with vanilla nodeJS. 
+visualize command is a cli command that uses the exact same logic in the hack/visualize.ts file.
 
-The shell scripts, and visualize.js are included in the npm dist/ bundle and baked into the package so they can be copied out of the package root by `npx repomirror init` cli command.
+The shell scripts are included in the npm dist/ bundle and baked into the package so they can be copied out of the package root by `npx repomirror init` cli command.
 
 **NOTE** - the above commands are sketches, you may find you need to adjust them to fit together well or to improve usability or reduce error-proneness.
 
