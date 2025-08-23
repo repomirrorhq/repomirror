@@ -9,6 +9,7 @@ Some example projects maintained by repomirror:
 - [assistant-ui-vue](https://github.com/yonom/assistant-ui-vue) - Port of assistant-ui-react to vue.js
 - [openconvex](https://github.com/dexhorthy/openconvex) - TS implementation of convex using `llms-full.txt`
 - [open-dedalus](https://github.com/yonom/open-dedalus) - open source clone of dedalus using `llms-full.txt`
-
+- [better-ui](https://github.com/lantos1618/better-ui/tree/lantos-aui) - Assistant UI + TRPC (ai ui with frontend and backend State)
+- [lynlan](https://github.com/lantos1618/lynlang) - GO + RUST + Haskel 
 ## Usage
 
