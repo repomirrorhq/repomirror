@@ -1,0 +1,13 @@
+sync-check serves as a terminator for the sync-one loop.
+
+for example,
+
+```
+while ! sync-check TARGET; do
+    sync-one TARGET
+done;
+```
+
+sync-check will check if the target repo is up to date with the source repo.
+
+it uses a similar prompt to sync-one, but with the final prompt to 
