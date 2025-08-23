@@ -10,6 +10,9 @@
 - [x] Generate transformation prompt using Claude SDK
 - [x] Perform preflight checks (git, claude, directories)
 - [x] Create .repomirror/ directory with scripts
+- [x] Ensure all preflight checks have verbose output
+- [x] Ensure all prompts/cli flags are stashed to a repomirror.yaml during setup, and defaults are populated from the yaml file if present (instead of core defaults)
+- [ ] debug issue with `npx repomirror init` hanging during claude code command
 
 ## Priority 3: Sync Commands ✅
 - [x] Implement `sync` command to run sync.sh

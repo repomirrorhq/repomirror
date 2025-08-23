@@ -13,12 +13,20 @@ What changes do you want to make: [e.g. "translate this python repo to typescrip
 note 0 - the default source repo is the current directory `./`
 note 1 - the default transform directory is `../REPONAME-transformed`
 
+all prompts should be loadable from a repomirror.yaml file if present,
+or settable with a command line flag. `repomirror help` or `--help` should explain how this works and the available options.
+
+- all prompts/cli flags are stashed to a repomirror.yaml during setup, and defaults are populated from the yaml file if present (instead of core defaults)
+
+
 preflight checks
 
 - ensure the target directory exists
 - ensure the target directory is initialized as a git repo
 - ensure the target directory has at least one upstream
 - ensure the user has a configured claude code profile (e.g. `claude -p "say hi" and ensure the output contains "hi" or "Hi")
+
+The preflight checks should print output about what they are doing and what they are checking.
 
 ### Background: CLaude sdk:
 
