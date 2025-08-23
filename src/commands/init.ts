@@ -40,7 +40,10 @@ interface RepoMirrorConfig {
 
 async function loadExistingConfig(sourceRepo?: string): Promise<Partial<RepoMirrorConfig> | null> {
   try {
-    const baseDir = sourceRepo ? resolve(sourceRepo) : process.cwd();
+    // Use process.cwd() as base for relative paths to ensure proper mocking in tests
+    const baseDir = sourceRepo && sourceRepo !== "./" 
+      ? resolve(process.cwd(), sourceRepo) 
+      : process.cwd();
     const configPath = join(baseDir, "repomirror.yaml");
     const configContent = await fs.readFile(configPath, "utf-8");
     return yaml.parse(configContent) as RepoMirrorConfig;
@@ -50,7 +53,12 @@ async function loadExistingConfig(sourceRepo?: string): Promise<Partial<RepoMirr
 }
 
 async function saveConfig(config: RepoMirrorConfig, sourceRepo?: string): Promise<void> {
-  const baseDir = sourceRepo ? resolve(sourceRepo) : process.cwd();
+  // Use process.cwd() as base for relative paths to ensure proper mocking in tests
+  const baseDir = sourceRepo && sourceRepo !== "./" 
+    ? resolve(process.cwd(), sourceRepo) 
+    : process.cwd();
+  // Ensure the directory exists before writing the config
+  await fs.mkdir(baseDir, { recursive: true });
   const configPath = join(baseDir, "repomirror.yaml");
   const configContent = yaml.stringify(config);
   await fs.writeFile(configPath, configContent, "utf-8");
@@ -128,7 +136,7 @@ export async function init(cliOptions?: Partial<InitOptions>): Promise<void> {
   await performPreflightChecks(finalConfig.targetRepo);
 
   // Generate transformation prompt using Claude SDK
-  const spinner = ora("Generating transformation prompt...").start();
+  console.log(chalk.cyan("\nGenerating transformation prompt..."));
 
   try {
     const optimizedPrompt = await generateTransformationPrompt(
@@ -137,7 +145,7 @@ export async function init(cliOptions?: Partial<InitOptions>): Promise<void> {
       finalConfig.transformationInstructions,
     );
 
-    spinner.succeed("Generated transformation prompt");
+    console.log(chalk.green("✔ Generated transformation prompt"));
 
     // Create .repomirror directory and files
     await createRepoMirrorFiles(
@@ -150,16 +158,28 @@ export async function init(cliOptions?: Partial<InitOptions>): Promise<void> {
     console.log(chalk.cyan("\nNext steps:"));
     console.log(
       chalk.white(
-        "• Run `npx repomirror sync` - this will run the sync.sh script once",
+        "run `npx repomirror sync` - this will run the sync.sh script once",
       ),
     );
+    console.log("");
     console.log(
       chalk.white(
-        "• Run `npx repomirror sync-forever` - this will run the ralph.sh script, working forever to implement all the changes",
+        "run `npx repomirror sync-forever` - this will run the ralph.sh script, working forever to implement all the changes",
       ),
     );
+    console.log("");
+    console.log(
+      chalk.white(
+        "The following files were created and safe to commit. Edit prompt.md as you see fit, but you probably dont want to run these files directly",
+      ),
+    );
+    console.log("");
+    console.log(chalk.white("- .repomirror/prompt.md # prompt"));
+    console.log(chalk.white("- .repomirror/sync.sh"));
+    console.log(chalk.white("- .repomirror/ralph.sh"));
+    console.log(chalk.white("- .repomirror/.gitignore"));
   } catch (error) {
-    spinner.fail("Failed to generate transformation prompt");
+    console.log(chalk.red("✖ Failed to generate transformation prompt"));
     console.error(
       chalk.red(
         `Error: ${error instanceof Error ? error.message : String(error)}`,
@@ -248,10 +268,14 @@ async function performPreflightChecks(targetRepo: string): Promise<void> {
     console.log(chalk.white("4. Testing Claude Code configuration..."));
     const claudeSpinner = ora("   Running Claude Code test command").start();
     try {
-      const { stdout } = await execa("claude", ["-p", "say hi"]);
-      if (!stdout.toLowerCase().includes("hi")) {
+      const { stdout } = await execa("claude", ["-p", "say hi"], {
+        timeout: 30000, // 30 second timeout
+        input: "", // Provide empty stdin to prevent claude from waiting
+      });
+      // Check if Claude responded with something reasonable (not empty and more than 10 chars)
+      if (!stdout || stdout.trim().length < 10) {
         claudeSpinner.fail(
-          "   Claude Code test failed - response doesn't contain 'hi'",
+          "   Claude Code test failed - response was empty or too short",
         );
         console.log(
           chalk.gray(
@@ -267,8 +291,14 @@ async function performPreflightChecks(targetRepo: string): Promise<void> {
         ),
       );
     } catch (error) {
-      claudeSpinner.fail("   Claude Code is not properly configured");
-      console.log(chalk.red("   Please run `claude` to set up your profile"));
+      if (error instanceof Error && error.message.includes("timed out")) {
+        claudeSpinner.fail("   Claude Code test timed out after 30 seconds");
+        console.log(chalk.red("   The 'claude -p \"say hi\"' command is not responding"));
+        console.log(chalk.yellow("   This might indicate an issue with your Claude Code setup"));
+      } else {
+        claudeSpinner.fail("   Claude Code is not properly configured");
+        console.log(chalk.red("   Please run `claude` to set up your profile"));
+      }
       if (error instanceof Error) {
         console.log(chalk.gray(`   Error: ${error.message}`));
       }
@@ -303,7 +333,7 @@ ${transformationInstructions}`;
 <example 1>
 Your job is to port [SOURCE PATH] monorepo (for react) to [TARGET PATH] (for vue) and maintain the repository.
 
-You have access to the current [SOURCE PATH] repositorty as well as the [TARGET PATH] repository.
+You have access to the current [SOURCE PATH] repository as well as the [TARGET PATH] repository.
 
 Make a commit and push your changes after every single file edit.
 
@@ -315,7 +345,7 @@ The original project was mostly tested by manually running the code. When portin
 <example 2>
 Your job is to port browser-use monorepo (Python) to browser-use-ts (Typescript) and maintain the repository.
 
-You have access to the current [SOURCE PATH] repositorty as well as the target [TARGET_PATH] repository.
+You have access to the current [SOURCE PATH] repository as well as the target [TARGET_PATH] repository.
 
 Make a commit and push your changes after every single file edit.
 
@@ -337,9 +367,44 @@ When you are ready, respond with EXACTLY the prompt matching the example, tailor
 You should follow the format EXACTLY, filling in information based on what you learn from a CURSORY exploration of the source repo (this directory). Ensure you ONLY use the read tools (Read, Search, Grep, LS, Glob, etc) to explore the repo. You only need enough sense to build a good prompt, so dont use subagents.`;
 
   let result = "";
+  let toolCallCount = 0;
+  
   for await (const message of query({
     prompt: metaPrompt,
   })) {
+    // Stream tool calls to user in a compact format
+    if (message.type === "assistant" && (message as any).message?.content?.[0]?.name) {
+      const toolName = (message as any).message.content[0].name;
+      const toolInput = (message as any).message.content[0].input;
+      toolCallCount++;
+      
+      // Build compact tool display
+      let toolDisplay = `  ${chalk.cyan(toolName)}`;
+      
+      // Add key argument for the tool
+      if (toolInput) {
+        if (toolInput.file_path) {
+          toolDisplay += `(${chalk.green(toolInput.file_path)})`;
+        } else if (toolInput.path) {
+          toolDisplay += `(${chalk.green(toolInput.path)})`;
+        } else if (toolInput.pattern) {
+          toolDisplay += `(${chalk.green(`"${toolInput.pattern}"`)})`;
+        } else if (toolInput.command) {
+          const cmd = toolInput.command.length > 50 
+            ? toolInput.command.substring(0, 50) + "..."
+            : toolInput.command;
+          toolDisplay += `(${chalk.green(cmd)})`;
+        } else if (toolInput.query) {
+          const q = toolInput.query.length > 30
+            ? toolInput.query.substring(0, 30) + "..."
+            : toolInput.query;
+          toolDisplay += `(${chalk.green(`"${q}"`)})`;
+        }
+      }
+      
+      console.log(toolDisplay);
+    }
+    
     if (message.type === "result") {
       if (message.is_error) {
         throw new Error(
@@ -350,6 +415,10 @@ You should follow the format EXACTLY, filling in information based on what you l
       result = (message as any).result || "";
       break;
     }
+  }
+
+  if (toolCallCount > 0) {
+    console.log(chalk.gray(`  Analyzed codebase with ${toolCallCount} tool calls`));
   }
 
   if (!result) {
@@ -370,7 +439,10 @@ async function createRepoMirrorFiles(
   targetRepo: string,
   optimizedPrompt: string,
 ): Promise<void> {
-  const sourceDir = resolve(sourceRepo);
+  // Use process.cwd() as base for relative paths to ensure proper mocking in tests
+  const sourceDir = sourceRepo && sourceRepo !== "./" 
+    ? resolve(process.cwd(), sourceRepo) 
+    : process.cwd();
   const repoMirrorDir = join(sourceDir, ".repomirror");
 
   // Create .repomirror directory

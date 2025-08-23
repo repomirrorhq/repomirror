@@ -138,7 +138,7 @@ describe("init command", () => {
       // Verify preflight checks were called
       expect(mockExeca).toHaveBeenCalledWith("git", ["rev-parse", "--git-dir"], { cwd: tempTargetDir });
       expect(mockExeca).toHaveBeenCalledWith("git", ["remote", "-v"], { cwd: tempTargetDir });
-      expect(mockExeca).toHaveBeenCalledWith("claude", ["-p", "say hi"]);
+      expect(mockExeca).toHaveBeenCalledWith("claude", ["-p", "say hi"], { timeout: 30000, input: "" });
 
       // Verify Claude query was called
       expect(mockClaudeQuery).toHaveBeenCalledWith({
@@ -240,11 +240,11 @@ describe("init command", () => {
 
       await expect(init()).rejects.toThrow("Process exit called with code 1");
 
-      expect(mockExeca).toHaveBeenCalledWith("claude", ["-p", "say hi"]);
+      expect(mockExeca).toHaveBeenCalledWith("claude", ["-p", "say hi"], { timeout: 30000, input: "" });
       expect(spinnerMock.fail).toHaveBeenCalledWith(expect.stringContaining("Claude Code is not properly configured"));
     });
 
-    it("should fail when Claude Code response doesn't contain 'hi'", async () => {
+    it("should fail when Claude Code response is too short", async () => {
       await createMockGitRepo(tempTargetDir, true);
 
       mockExeca
@@ -253,11 +253,11 @@ describe("init command", () => {
           stdout: "origin\thttps://github.com/test/repo.git (fetch)", 
           exitCode: 0 
         }) // git remote -v success
-        .mockResolvedValueOnce({ stdout: "Hello there!", exitCode: 0 }); // claude test with wrong response
+        .mockResolvedValueOnce({ stdout: "Hi", exitCode: 0 }); // claude test with response too short (< 10 chars)
 
       await expect(init()).rejects.toThrow("Process exit called with code 1");
 
-      expect(spinnerMock.fail).toHaveBeenCalledWith(expect.stringContaining("response doesn't contain 'hi'"));
+      expect(spinnerMock.fail).toHaveBeenCalledWith(expect.stringContaining("response was empty or too short"));
     });
   });
 
@@ -307,7 +307,7 @@ describe("init command", () => {
 
       await expect(init()).rejects.toThrow("Process exit called with code 1");
 
-      expect(spinnerMock.fail).toHaveBeenCalledWith("Failed to generate transformation prompt");
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("✖ Failed to generate transformation prompt"));
       expect(consoleMock.error).toHaveBeenCalledWith(expect.stringContaining("Claude API error"));
     });
 
@@ -431,14 +431,25 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
     });
 
     it("should handle file creation errors gracefully", async () => {
-      // Mock fs.mkdir to fail - this should be caught by the try-catch and trigger process.exit(1)
-      vi.spyOn(fs, "mkdir").mockRejectedValueOnce(new Error("Permission denied"));
+      // Mock fs.mkdir to fail on the .repomirror directory creation
+      // This happens in createRepoMirrorFiles which is inside the try-catch
+      const mkdirSpy = vi.spyOn(fs, "mkdir");
+      let callCount = 0;
+      mkdirSpy.mockImplementation(async (path, options) => {
+        callCount++;
+        // Let the first call (for config directory) succeed
+        if (callCount === 1) {
+          return Promise.resolve(undefined);
+        }
+        // Fail on the second call (for .repomirror directory)
+        throw new Error("Permission denied");
+      });
 
       await expect(init()).rejects.toThrow("Process exit called with code 1");
       
       // Verify error message was logged
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("✖ Failed to generate transformation prompt"));
       expect(consoleMock.error).toHaveBeenCalledWith(expect.stringContaining("Permission denied"));
-      expect(spinnerMock.fail).toHaveBeenCalledWith("Failed to generate transformation prompt");
     });
   });
 
@@ -498,8 +509,11 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
     it("should handle custom user responses", async () => {
       await createMockGitRepo(tempTargetDir, true);
 
+      // Create a custom source directory for testing
+      const customSourceDir = await createTempDir("custom-source-");
+      
       const customResponses = {
-        sourceRepo: "/custom/source",
+        sourceRepo: customSourceDir,
         targetRepo: tempTargetDir,
         transformationInstructions: "convert java to golang",
       };
@@ -530,9 +544,12 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       });
 
       // Check generated files contain custom values
-      const syncPath = join(tempSourceDir, ".repomirror", "sync.sh");
+      const syncPath = join(customSourceDir, ".repomirror", "sync.sh");
       const syncContent = await fs.readFile(syncPath, "utf8");
       expect(syncContent).toContain(tempTargetDir);
+      
+      // Clean up custom source dir
+      await cleanupTempDir(customSourceDir);
     });
   });
 
@@ -613,11 +630,13 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       expect(mockOra).toHaveBeenCalledWith(expect.stringContaining("Verifying git repository"));
       expect(mockOra).toHaveBeenCalledWith(expect.stringContaining("Listing git remotes"));
       expect(mockOra).toHaveBeenCalledWith("   Running Claude Code test command");
-      expect(mockOra).toHaveBeenCalledWith("Generating transformation prompt...");
 
-      // Check that spinners were started and succeeded (4 preflight checks + 1 generation)
-      expect(spinnerMock.start).toHaveBeenCalledTimes(5);
-      expect(spinnerMock.succeed).toHaveBeenCalledWith("Generated transformation prompt");
+      // Check that spinners were started and succeeded (4 preflight checks only)
+      expect(spinnerMock.start).toHaveBeenCalledTimes(4);
+      
+      // Check that console.log was called for generating prompt message
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("Generating transformation prompt..."));
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("✔ Generated transformation prompt"));
     });
 
     it("should show correct console output", async () => {
@@ -790,7 +809,8 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
 
       await init();
 
-      const configPath = join(tempSourceDir, "repomirror.yaml");
+      // Config should be saved in the source subdirectory when sourceRepo is relative
+      const configPath = join(tempSourceDir, "source/../source/./", "repomirror.yaml");
       const configContent = await fs.readFile(configPath, "utf-8");
       const yaml = await import("yaml");
       const config = yaml.parse(configContent);
@@ -845,7 +865,8 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       });
 
       // Verify config was saved with CLI values
-      const configPath = join(tempSourceDir, "repomirror.yaml");
+      // Config should be saved in the cli-source subdirectory
+      const configPath = join(tempSourceDir, "cli-source", "repomirror.yaml");
       const configContent = await fs.readFile(configPath, "utf-8");
       const yaml = await import("yaml");
       const config = yaml.parse(configContent);
@@ -876,7 +897,8 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       expect(instructionsPrompt.when).toBe(true); // Should show instructions prompt
 
       // Verify final config contains CLI override
-      const configPath = join(tempSourceDir, "repomirror.yaml");
+      // Config should be saved in the cli-source subdirectory
+      const configPath = join(tempSourceDir, "cli-source", "repomirror.yaml");
       const configContent = await fs.readFile(configPath, "utf-8");
       const yaml = await import("yaml");
       const config = yaml.parse(configContent);
@@ -890,7 +912,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       // Create existing config
       const existingConfig = {
         sourceRepo: "./existing-source",
-        targetRepo: "./existing-target",
+        targetRepo: tempTargetDir, // Use the temp dir for preflight checks
         transformationInstructions: "existing instructions",
       };
       
@@ -917,7 +939,8 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       });
 
       // Verify final config has CLI overrides
-      const finalConfigContent = await fs.readFile(join(tempSourceDir, "repomirror.yaml"), "utf-8");
+      // Config gets saved to the final sourceRepo location
+      const finalConfigContent = await fs.readFile(join(tempSourceDir, "existing-source", "repomirror.yaml"), "utf-8");
       const finalConfig = yaml.parse(finalConfigContent);
       
       expect(finalConfig.sourceRepo).toBe("./existing-source"); // From existing config (no CLI override)
@@ -997,7 +1020,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
 
       await expect(init()).rejects.toThrow("Process exit called with code 1");
 
-      expect(spinnerMock.fail).toHaveBeenCalledWith("Failed to generate transformation prompt");
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("✖ Failed to generate transformation prompt"));
       expect(consoleMock.error).toHaveBeenCalledWith(expect.stringContaining("Claude API returned an error"));
     });
 
@@ -1037,7 +1060,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
 
       await expect(init()).rejects.toThrow("Process exit called with code 1");
 
-      expect(spinnerMock.fail).toHaveBeenCalledWith("Failed to generate transformation prompt");
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("✖ Failed to generate transformation prompt"));
       expect(consoleMock.error).toHaveBeenCalledWith(expect.stringContaining("Network timeout"));
     });
 
@@ -1124,7 +1147,9 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       await init();
 
       // Check that paths are preserved as entered in the config
-      const configContent = await fs.readFile(join(tempSourceDir, "repomirror.yaml"), "utf-8");
+      // Config should be saved in the src/../src/./ subdirectory
+      const configPath = join(tempSourceDir, "src/../src/./", "repomirror.yaml");
+      const configContent = await fs.readFile(configPath, "utf-8");
       const yaml = await import("yaml");
       const config = yaml.parse(configContent);
       expect(config.sourceRepo).toBe("./src/../src/./");
@@ -1145,7 +1170,8 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
         await init();
 
         // Check sync.sh properly handles the path with spaces
-        const syncContent = await fs.readFile(join(tempSourceDir, ".repomirror", "sync.sh"), "utf8");
+        // Files should be in the "source with spaces" subdirectory
+        const syncContent = await fs.readFile(join(tempSourceDir, "source with spaces", ".repomirror", "sync.sh"), "utf8");
         expect(syncContent).toContain(`--add-dir ${tempDirWithSpaces}`);
       } finally {
         await cleanupTempDir(tempDirWithSpaces);
@@ -1181,7 +1207,9 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
         await init();
 
         // Should handle long paths without issue
-        const configContent = await fs.readFile(join(tempSourceDir, "repomirror.yaml"), "utf-8");
+        // Config should be saved in the nested subdirectory
+        const configPath = join(tempSourceDir, "." + "/nested".repeat(20), "repomirror.yaml");
+        const configContent = await fs.readFile(configPath, "utf-8");
         const yaml = await import("yaml");
         const config = yaml.parse(configContent);
         expect(config.targetRepo).toBe(tempLongDir);

@@ -17,6 +17,10 @@
   - Must break after receiving result (currently only breaks on non-error results)
   - Must handle ALL message types, not just "result" type
   - See updated spec.md for correct implementation pattern
+- [x] improve the cli init output to match the spec ✅
+  - Updated output format to match spec exactly (removed bullet points, added file list)
+  - Fixed typo "repositorty" → "repository" in prompt examples
+- [x] update transformation prompt to match the spec ✅
 
 ## Priority 3: Sync Commands ✅
 - [x] Implement `sync` command to run sync.sh

@@ -3,14 +3,14 @@
  */
 
 export const mockRepoConfig = {
-  sourceRepo: "./source",
+  sourceRepo: "./",
   targetRepo: "../target",
   transformationInstructions: "transform python to typescript",
 };
 
-export const mockTransformationPrompt = `Your job is to port ./source monorepo (Python) to ../target (TypeScript) and maintain the repository.
+export const mockTransformationPrompt = `Your job is to port ./ monorepo (Python) to ../target (TypeScript) and maintain the repository.
 
-You have access to the current ./source repository as well as the ../target repository.
+You have access to the current ./ repository as well as the ../target repository.
 
 Make a commit and push your changes after every single file edit.
 
@@ -71,7 +71,7 @@ export const mockCommandResponses = {
 };
 
 export const mockInquirerResponses = {
-  sourceRepo: "./source",
+  sourceRepo: "./",
   targetRepo: "../target", 
   transformationInstructions: "transform python to typescript"
 };

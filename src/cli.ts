@@ -8,6 +8,7 @@ import { visualize } from "./commands/visualize";
 import { remote } from "./commands/remote";
 import { push } from "./commands/push";
 import { pull } from "./commands/pull";
+import { githubActions } from "./commands/github-actions";
 
 const program = new Command();
 
@@ -144,5 +145,37 @@ Examples:
       Check for available changes without pulling`,
   )
   .action((options) => pull(options));
+
+program
+  .command("github-actions")
+  .description("Generate GitHub Actions workflow for automated syncing")
+  .option("-n, --name <name>", "Workflow file name (default: repomirror-sync.yml)")
+  .option("-s, --schedule <cron>", "Cron schedule for automatic runs")
+  .option("--no-auto-push", "Disable automatic pushing to target repo")
+  .addHelpText(
+    "after",
+    `
+Generates a GitHub Actions workflow file for automated repository syncing.
+
+Examples:
+  $ npx repomirror github-actions
+      Interactive setup with prompts
+  
+  $ npx repomirror github-actions --schedule "0 */12 * * *"
+      Run every 12 hours
+  
+  $ npx repomirror github-actions --no-auto-push
+      Create workflow without automatic push to target
+
+Notes:
+  - Requires repomirror.yaml to be present
+  - Creates workflow in .github/workflows/
+  - You'll need to set up CLAUDE_API_KEY secret in GitHub`,
+  )
+  .action((options) => githubActions({
+    workflowName: options.name,
+    schedule: options.schedule,
+    autoPush: options.autoPush,
+  }));
 
 program.parse();

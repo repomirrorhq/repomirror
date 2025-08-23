@@ -68,7 +68,7 @@ your task is to generate an optimized prompt for repo transformation. The prompt
 <example 1>
 Your job is to port [SOURCE PATH] monorepo (for react) to [TARGET PATH] (for vue) and maintain the repository.
 
-You have access to the current [SOURCE PATH] repositorty as well as the [TARGET PATH] repository.
+You have access to the current [SOURCE PATH] repository as well as the [TARGET PATH] repository.
 
 Make a commit and push your changes after every single file edit.
 
@@ -80,7 +80,7 @@ The original project was mostly tested by manually running the code. When portin
 <example 2>
 Your job is to port browser-use monorepo (Python) to browser-use-ts (Typescript) and maintain the repository.
 
-You have access to the current [SOURCE PATH] repositorty as well as the target [TARGET_PATH] repository.
+You have access to the current [SOURCE PATH] repository as well as the target [TARGET_PATH] repository.
 
 Make a commit and push your changes after every single file edit.
 
@@ -148,9 +148,19 @@ The shell scripts are included in the npm dist/ bundle and baked into the packag
 
 Output instructions to the user about next steps to run the commands
 
+```
 run `npx repomirror sync` - this will run the sync.sh script  once
 
 run `npx repomirror sync-forever` - this will run the ralph.sh script, working forever to implement all the changes. 
 
+The following files were created and safe to commit. Edit prompt.md as you see fit, but you probably dont want to run these files directly
 
+- .repomirror/prompt.md # prompt
+- .repomirror/sync.sh 
+- .repomirror/ralph.sh 
+- .repomirror/.gitignore 
+```
 
+### INIT CLI NOTES
+
+- if .repomirror already exists, prompt the user if they want to overwrite the existing .repomirror/ directory. Flag to `--overwrite` to force overwrite.
