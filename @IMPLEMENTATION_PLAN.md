@@ -51,6 +51,22 @@
   - Interactive mode for selective issue fixing
   - Comprehensive test suite with 268 passing tests
 
+## Priority 5: GitHub Actions PR Sync Features ✅
+- [x] Implement `setup-github-pr-sync` command ✅
+  - Creates GitHub Actions workflow for PR-triggered syncing
+  - Configurable loop iterations (1-10 times) for sync-one command
+  - Persists settings to repomirror.yaml for future use
+  - Overwrite protection with user confirmation
+  - Creates `.github/workflows/repomirror.yml` workflow file
+  - Comprehensive test coverage (8 tests)
+- [x] Implement `dispatch-sync` command ✅
+  - Dispatches workflow runs using GitHub CLI
+  - Automatic repository detection from git remotes
+  - User confirmation with `--yes` flag to skip
+  - Quiet mode with `--quiet` flag (requires `--yes`)
+  - Comprehensive error handling for missing prerequisites
+  - Full test coverage (17 tests)
+
 ## Current Status
 Completed full implementation with all planned features:
 - All CLI commands implemented and working
@@ -64,8 +80,9 @@ Completed full implementation with all planned features:
 - Validation script for testing init command functionality
 - Test mode support with SKIP_CLAUDE_TEST environment variable
 - GitHub Actions workflow generation for CI/CD
-- **NEW: Issue fixer command for automatic issue detection and resolution**
-- Comprehensive test suite with 268 tests (2 skipped for interactive mode)
+- Issue fixer command for automatic issue detection and resolution
+- **NEW: GitHub Actions PR sync commands (`setup-github-pr-sync` and `dispatch-sync`)**
+- Comprehensive test suite with 285 tests (2 skipped for interactive mode)
 - TypeScript build passing with full type safety
 - All linting checks passing
 - Ready for production usage with complete feature set
@@ -81,7 +98,7 @@ Completed full implementation with all planned features:
 - Properly breaks the loop after receiving ANY result type
 - Added more descriptive error messages for debugging
 
-**Testing Completed**: 
+**Testing Completed**:
 - All 230 tests passing (comprehensive test coverage added)
 - TypeScript build successful
 - Ready for production use

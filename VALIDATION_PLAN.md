@@ -11,3 +11,6 @@ Results:
 - .repomirror/ directory created with all required files (prompt.md, sync.sh, ralph.sh, .gitignore)
 - Command handles CLI flags correctly (--source, --target, --instructions)
 - Test mode support added with SKIP_CLAUDE_TEST environment variable for automated testing
+
+
+BUG - CTRL + C does not work in sync-forever command
