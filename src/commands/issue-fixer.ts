@@ -356,6 +356,18 @@ Start by examining the target repository structure and the specific files mentio
     
     let result = "";
     let hasError = false;
+    let queryAborted = false;
+    
+    // Handle graceful shutdown during Claude SDK query
+    const signalHandler = () => {
+      console.log(chalk.yellow("\n\nStopping issue fixer..."));
+      queryAborted = true;
+      process.chdir(originalCwd);
+      process.exit(0);
+    };
+
+    process.on('SIGINT', signalHandler);
+    process.on('SIGTERM', signalHandler);
     
     // Change to target directory for Claude to have access
     const originalCwd = process.cwd();
@@ -365,6 +377,7 @@ Start by examining the target repository structure and the specific files mentio
       for await (const message of query({
         prompt,
       })) {
+        if (queryAborted) break;
         if (message.type === "result") {
           if (message.is_error) {
             hasError = true;
@@ -381,6 +394,9 @@ Start by examining the target repository structure and the specific files mentio
       }
     } finally {
       process.chdir(originalCwd);
+      // Clean up signal handlers
+      process.off('SIGINT', signalHandler);
+      process.off('SIGTERM', signalHandler);
     }
 
     if (!hasError && result) {

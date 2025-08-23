@@ -1,5 +1,17 @@
 # RepoMirror Implementation Plan
 
+## PRIORITY 0: fix critical bugs ✅
+- [x] sync-forever doesn't exit on ctrl+c ✅
+  - Fixed signal handling in sync-forever command for both legacy ralph.sh and new approach
+  - Added proper subprocess management with SIGINT/SIGTERM handlers
+- [x] check other commands for ctrl+c handling as well ✅
+  - Added signal handling to sync command
+  - Added signal handling to init command (Claude SDK query)
+  - Added signal handling to issue-fixer command (Claude SDK query)
+  - Added signal handling to pull command (for both sync and sync-forever)
+  - Added signal handling to visualize command
+  - All long-running commands now properly handle Ctrl+C
+
 ## Priority 1: Core Infrastructure ✅
 - [x] Create implementation plan
 - [x] Initialize npm project structure

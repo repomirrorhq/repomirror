@@ -97,12 +97,22 @@ export async function sync(options?: { autoPush?: boolean }): Promise<void> {
 
   console.log(chalk.cyan("Running sync.sh..."));
 
-  try {
-    await execa("bash", [syncScript], {
-      stdio: "inherit",
-      cwd: process.cwd(),
-    });
+  const subprocess = execa("bash", [syncScript], {
+    stdio: "inherit",
+    cwd: process.cwd(),
+  });
 
+  // Handle graceful shutdown for subprocess
+  const signalHandler = () => {
+    console.log(chalk.yellow("\nStopping sync..."));
+    subprocess.kill("SIGINT");
+  };
+
+  process.on('SIGINT', signalHandler);
+  process.on('SIGTERM', signalHandler);
+
+  try {
+    await subprocess;
     console.log(chalk.green("Sync completed successfully"));
 
     // Check for auto-push after successful sync
@@ -111,11 +121,24 @@ export async function sync(options?: { autoPush?: boolean }): Promise<void> {
       await performAutoPush(config, options?.autoPush || false);
     }
   } catch (error) {
+    // Clean up signal handlers
+    process.off('SIGINT', signalHandler);
+    process.off('SIGTERM', signalHandler);
+    
+    if (error instanceof Error && (error as any).signal === "SIGINT") {
+      console.log(chalk.yellow("\nSync stopped by user"));
+      process.exit(0);
+    }
+    
     console.error(
       chalk.red(
         `Sync failed: ${error instanceof Error ? error.message : String(error)}`,
       ),
     );
     process.exit(1);
+  } finally {
+    // Clean up signal handlers
+    process.off('SIGINT', signalHandler);
+    process.off('SIGTERM', signalHandler);
   }
 }

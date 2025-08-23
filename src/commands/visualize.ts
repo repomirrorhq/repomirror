@@ -309,6 +309,16 @@ export async function visualize(
   let lastLine: any = null; // Track the last line to detect final message
   let isLastAssistantMessage = false;
 
+  // Handle graceful shutdown
+  const signalHandler = () => {
+    console.log("\n" + colors.yellow + "Stopping visualizer..." + colors.reset);
+    rl.close();
+    process.exit(0);
+  };
+
+  process.on('SIGINT', signalHandler);
+  process.on('SIGTERM', signalHandler);
+
   rl.on("line", (line) => {
     if (line.trim()) {
       const timestamp = debugMode
