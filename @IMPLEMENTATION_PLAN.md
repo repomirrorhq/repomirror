@@ -38,7 +38,11 @@
 - [x] Add validation script for init command ✅
   - Created `hack/ralph-validate.sh` for automated testing
   - Added SKIP_CLAUDE_TEST environment variable for testing mode
-- [ ] GitHub Actions integration  
+- [x] GitHub Actions integration ✅
+  - Implemented `github-actions` command for workflow generation
+  - Creates customizable GitHub Actions workflow for automated syncing
+  - Supports scheduled runs, manual triggers, and push-triggered syncs
+  - Fixed linting error with escaped characters in workflow template
 - [ ] Issue fixer functionality
 
 ## Current Status

@@ -73,7 +73,7 @@ jobs:
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
         
-        if [ -n "\$(git status --porcelain)" ]; then
+        if [ -n "$(git status --porcelain)" ]; then
           git add -A
           git commit -m "Automated sync from source repository"
           git push
