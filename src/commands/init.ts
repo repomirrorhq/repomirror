@@ -300,14 +300,17 @@ You should follow the format EXACTLY, filling in information based on what you l
   for await (const message of query({
     prompt: metaPrompt,
   })) {
-    if (message.type === "result" && !message.is_error) {
+    if (message.type === "result") {
+      if (message.is_error) {
+        throw new Error((message as any).result || "Claude SDK error during prompt generation");
+      }
       result = (message as any).result || "";
       break;
     }
   }
 
   if (!result) {
-    throw new Error("Failed to generate transformation prompt");
+    throw new Error("Failed to generate transformation prompt - no result received");
   }
 
   // Replace placeholders with actual paths

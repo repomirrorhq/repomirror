@@ -28,23 +28,37 @@ preflight checks
 
 The preflight checks should print output about what they are doing and what they are checking.
 
-### Background: CLaude sdk:
+### Background: Claude sdk:
 
 ```
 import { query } from "@anthropic-ai/claude-code";
 
+// IMPORTANT: Handle all message types to avoid hanging
+// The loop will wait forever if you don't handle errors or check for completion
 for await (const message of query({
   prompt: "...PROMPT...",
 })) {
   if (message.type === "result") {
+    if (message.is_error) {
+      // Handle error case - MUST break or throw to avoid hanging
+      throw new Error(message.result || "Claude SDK error");
+    }
     console.log(message.result);
+    break; // Exit loop after getting result
   }
+  // Consider adding timeout or other message type handlers
 }
 ```
 
 ### step 1
 
 use the claude sdk to read files and generate a prompt 
+
+**CRITICAL IMPLEMENTATION NOTE**: The Claude SDK async iterator can hang indefinitely if not properly handled. Ensure:
+1. Always break the loop after receiving a valid result
+2. Handle error cases explicitly (check `is_error` flag)
+3. Consider implementing a timeout mechanism
+4. Store the result and break immediately - don't continue iterating
 
 where PROMPT conveys:
 
