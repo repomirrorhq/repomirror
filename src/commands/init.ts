@@ -38,9 +38,10 @@ interface RepoMirrorConfig {
   };
 }
 
-async function loadExistingConfig(): Promise<Partial<RepoMirrorConfig> | null> {
+async function loadExistingConfig(sourceRepo?: string): Promise<Partial<RepoMirrorConfig> | null> {
   try {
-    const configPath = join(process.cwd(), "repomirror.yaml");
+    const baseDir = sourceRepo ? resolve(sourceRepo) : process.cwd();
+    const configPath = join(baseDir, "repomirror.yaml");
     const configContent = await fs.readFile(configPath, "utf-8");
     return yaml.parse(configContent) as RepoMirrorConfig;
   } catch {
@@ -48,8 +49,9 @@ async function loadExistingConfig(): Promise<Partial<RepoMirrorConfig> | null> {
   }
 }
 
-async function saveConfig(config: RepoMirrorConfig): Promise<void> {
-  const configPath = join(process.cwd(), "repomirror.yaml");
+async function saveConfig(config: RepoMirrorConfig, sourceRepo?: string): Promise<void> {
+  const baseDir = sourceRepo ? resolve(sourceRepo) : process.cwd();
+  const configPath = join(baseDir, "repomirror.yaml");
   const configContent = yaml.stringify(config);
   await fs.writeFile(configPath, configContent, "utf-8");
 }
@@ -59,8 +61,9 @@ export async function init(cliOptions?: Partial<InitOptions>): Promise<void> {
     chalk.cyan("I'll help you maintain a transformed copy of this repo:\n"),
   );
 
-  // Load existing config if present
-  const existingConfig = await loadExistingConfig();
+  // Load existing config if present from source repo
+  const sourceRepoPath = cliOptions?.sourceRepo || "./";
+  const existingConfig = await loadExistingConfig(sourceRepoPath);
   if (existingConfig) {
     console.log(
       chalk.yellow("Found existing repomirror.yaml, using as defaults\n"),
@@ -117,8 +120,8 @@ export async function init(cliOptions?: Partial<InitOptions>): Promise<void> {
       answers.transformationInstructions,
   };
 
-  // Save configuration to repomirror.yaml
-  await saveConfig(finalConfig);
+  // Save configuration to repomirror.yaml in source directory
+  await saveConfig(finalConfig, finalConfig.sourceRepo);
   console.log(chalk.green("\n✅ Saved configuration to repomirror.yaml"));
 
   // Perform preflight checks
@@ -367,7 +370,8 @@ async function createRepoMirrorFiles(
   targetRepo: string,
   optimizedPrompt: string,
 ): Promise<void> {
-  const repoMirrorDir = join(process.cwd(), ".repomirror");
+  const sourceDir = resolve(sourceRepo);
+  const repoMirrorDir = join(sourceDir, ".repomirror");
 
   // Create .repomirror directory
   await fs.mkdir(repoMirrorDir, { recursive: true });
