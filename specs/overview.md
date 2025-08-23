@@ -50,3 +50,6 @@ while you're working, write any intermediate may be written to .repomirror/*.md
 - ./github_actions_install.md - `npx repomirror install-github` sets up github actions to do the sync on every pr merge
 - ./issue_fixer.md - watch open issues in a loop  with research/plan/implement
 
+### rules 
+
+- use bun as the package manager
