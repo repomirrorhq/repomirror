@@ -1,2 +1,3 @@
 dist/
 claude_output.jsonl
+node_modules/

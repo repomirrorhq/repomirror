@@ -3,45 +3,17 @@ import * as path from "path";
 import chalk from "chalk";
 import ora from "ora";
 
-const defaultConfig = `# RepomMirror Configuration
+const defaultConfig = `# RepoMirror Configuration
 # This file configures how repositories are synced and transformed
 
-# Source repository configuration
-source:
-  type: git
-  url: ""
-  branch: main
-  
-# Target repository configuration  
-target:
-  type: git
-  url: ""
-  branch: main
-
-# Transformation rules
-transforms:
-  - type: file-rename
-    patterns:
-      - from: "*.old"
-        to: "*.new"
-        
-  - type: content-replace
-    files: "**/*.md"
-    replacements:
-      - from: "old-text"
-        to: "new-text"
-
-# Sync configuration
-sync:
-  # How often to check for changes (in minutes)
-  interval: 60
-  
-  # Files/directories to ignore
-  ignore:
-    - "node_modules/"
-    - ".git/"
-    - "*.log"
-    - "tmp/"
+syncs:
+  - source:
+      path: ./
+    target:
+      repo: ../assistant-ui-vuejs
+    instructions: |
+      translate the react repo to vuejs
+    agent: claude_code # or amp
 `;
 
 export async function init(): Promise<void> {

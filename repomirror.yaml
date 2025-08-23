@@ -1,0 +1,11 @@
+# RepoMirror Configuration
+# This file configures how repositories are synced and transformed
+
+syncs:
+  - source:
+      path: ./
+    target:
+      repo: ../assistant-ui-vuejs
+    instructions: |
+      translate the react repo to vuejs
+    agent: claude_code # or amp
