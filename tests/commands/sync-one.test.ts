@@ -179,6 +179,23 @@ echo "Test sync execution"`,
       expect(mockSync).toHaveBeenCalledWith();
     });
 
+    it("should be a true alias with zero functional differences from sync", async () => {
+      mockSync.mockResolvedValue(undefined);
+
+      // Verify that syncOne is literally just a wrapper around sync
+      // with no additional logic, parameters, or side effects
+      await syncOne();
+
+      // Should call sync exactly once with no arguments
+      expect(mockSync).toHaveBeenCalledTimes(1);
+      expect(mockSync).toHaveBeenCalledWith();
+
+      // Should not have any other function calls or side effects
+      expect(consoleMock.log).not.toHaveBeenCalled();
+      expect(consoleMock.error).not.toHaveBeenCalled();
+      expect(consoleMock.warn).not.toHaveBeenCalled();
+    });
+
     it("should not add any additional functionality beyond sync", async () => {
       mockSync.mockResolvedValue(undefined);
 
@@ -292,6 +309,317 @@ echo "Test sync execution"`,
 
       // Should result in exactly one call to sync
       expect(syncCallCount).toBe(1);
+      expect(mockSync).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("console output verification", () => {
+    it("should not produce any console output directly (all output from sync)", async () => {
+      mockSync.mockResolvedValue(undefined);
+
+      await syncOne();
+
+      // syncOne should not produce any console output itself
+      // All output should come from the sync function it calls
+      expect(consoleMock.log).not.toHaveBeenCalled();
+      expect(consoleMock.error).not.toHaveBeenCalled();
+      expect(consoleMock.warn).not.toHaveBeenCalled();
+      expect(consoleMock.info).not.toHaveBeenCalled();
+      expect(mockSync).toHaveBeenCalledTimes(1);
+    });
+
+    it("should let sync handle all console output on success", async () => {
+      // Mock sync to produce some console output
+      mockSync.mockImplementation(async () => {
+        console.log("Running sync.sh...");
+        console.log("Sync completed successfully");
+        return undefined;
+      });
+
+      await syncOne();
+
+      // Verify sync was called and produced output
+      expect(mockSync).toHaveBeenCalledTimes(1);
+      expect(consoleMock.log).toHaveBeenCalledWith("Running sync.sh...");
+      expect(consoleMock.log).toHaveBeenCalledWith("Sync completed successfully");
+    });
+
+    it("should let sync handle all console output on error", async () => {
+      // Mock sync to produce error output before throwing
+      mockSync.mockImplementation(async () => {
+        console.error("Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.");
+        throw new Error("Process exit called with code 1");
+      });
+
+      await expect(syncOne()).rejects.toThrow("Process exit called with code 1");
+
+      // Verify sync was called and produced error output
+      expect(mockSync).toHaveBeenCalledTimes(1);
+      expect(consoleMock.error).toHaveBeenCalledWith("Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.");
+    });
+
+    it("should preserve the exact console output from sync", async () => {
+      const testMessages = [
+        "Running sync.sh...",
+        "Processing files...",
+        "Sync completed successfully"
+      ];
+
+      mockSync.mockImplementation(async () => {
+        testMessages.forEach(msg => console.log(msg));
+        return undefined;
+      });
+
+      await syncOne();
+
+      // Verify all messages were logged in the correct order
+      expect(mockSync).toHaveBeenCalledTimes(1);
+      testMessages.forEach(msg => {
+        expect(consoleMock.log).toHaveBeenCalledWith(msg);
+      });
+      expect(consoleMock.log).toHaveBeenCalledTimes(testMessages.length);
+    });
+  });
+
+  describe("argument passing verification", () => {
+    it("should pass no arguments to sync (both take zero parameters)", async () => {
+      mockSync.mockResolvedValue(undefined);
+
+      // Call syncOne with no arguments (as it should be called)
+      await syncOne();
+
+      // Verify sync was called with exactly zero arguments
+      expect(mockSync).toHaveBeenCalledTimes(1);
+      expect(mockSync).toHaveBeenCalledWith();
+      expect(mockSync).toHaveBeenCalledWith(...[]); // Explicitly verify no args
+    });
+
+    it("should handle the fact that neither command accepts parameters", async () => {
+      mockSync.mockResolvedValue(undefined);
+
+      // syncOne doesn't accept parameters, just like sync
+      const result = await syncOne();
+
+      // Verify the call signature matches sync exactly
+      expect(result).toBeUndefined();
+      expect(mockSync).toHaveBeenCalledTimes(1);
+      expect(mockSync).toHaveBeenCalledWith();
+    });
+
+    it("should maintain parameter consistency with sync command", async () => {
+      mockSync.mockResolvedValue(undefined);
+
+      // Both commands should have identical function signatures
+      // syncOne: () => Promise<void>
+      // sync: () => Promise<void>
+      
+      // Test that syncOne behaves exactly like sync would
+      await syncOne();
+
+      expect(mockSync).toHaveBeenCalledTimes(1);
+      expect(mockSync).toHaveBeenCalledWith();
+
+      // Clear mocks and test direct sync call for comparison
+      mockSync.mockClear();
+      await mockSync();
+
+      // Both calls should be identical
+      expect(mockSync).toHaveBeenCalledTimes(1);
+      expect(mockSync).toHaveBeenCalledWith();
+    });
+  });
+
+  describe("delegation verification", () => {
+    it("should delegate 100% of functionality to sync", async () => {
+      mockSync.mockResolvedValue(undefined);
+
+      await syncOne();
+
+      // syncOne should do nothing except call sync
+      expect(mockSync).toHaveBeenCalledTimes(1);
+      expect(mockSync).toHaveBeenCalledWith();
+
+      // No other system calls should be made by syncOne itself
+      expect(processMock.exit).not.toHaveBeenCalled();
+      expect(consoleMock.log).not.toHaveBeenCalled();
+      expect(consoleMock.error).not.toHaveBeenCalled();
+    });
+
+    it("should delegate error handling entirely to sync", async () => {
+      const customError = new Error("Custom delegation test error");
+      mockSync.mockRejectedValue(customError);
+
+      try {
+        await syncOne();
+        expect(true).toBe(false); // Should not reach here
+      } catch (error) {
+        // Error should be the exact same object from sync
+        expect(error).toBe(customError);
+        expect(error.message).toBe("Custom delegation test error");
+      }
+
+      expect(mockSync).toHaveBeenCalledTimes(1);
+    });
+
+    it("should delegate success handling entirely to sync", async () => {
+      const customReturnValue = undefined; // sync returns Promise<void>
+      mockSync.mockResolvedValue(customReturnValue);
+
+      const result = await syncOne();
+
+      // Result should be exactly what sync returned
+      expect(result).toBe(customReturnValue);
+      expect(mockSync).toHaveBeenCalledTimes(1);
+    });
+
+    it("should delegate all async behavior to sync", async () => {
+      let syncStarted = false;
+      let syncCompleted = false;
+
+      mockSync.mockImplementation(async () => {
+        syncStarted = true;
+        await new Promise(resolve => setTimeout(resolve, 50));
+        syncCompleted = true;
+        return undefined;
+      });
+
+      // Before calling syncOne, sync should not have started
+      expect(syncStarted).toBe(false);
+      expect(syncCompleted).toBe(false);
+
+      const promise = syncOne();
+      
+      // After calling syncOne but before awaiting, sync should have started
+      expect(syncStarted).toBe(true);
+      expect(syncCompleted).toBe(false);
+
+      await promise;
+
+      // After awaiting, sync should be completed
+      expect(syncCompleted).toBe(true);
+      expect(mockSync).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("comprehensive error propagation", () => {
+    it("should propagate all error types without modification", async () => {
+      const errorTypes = [
+        new Error("Standard error"),
+        new TypeError("Type error"),
+        new ReferenceError("Reference error"),
+        new SyntaxError("Syntax error"),
+        { name: "CustomError", message: "Custom error object" },
+        "String error",
+        42, // Number error
+        null,
+        undefined
+      ];
+
+      for (const error of errorTypes) {
+        mockSync.mockClear();
+        mockSync.mockRejectedValue(error);
+
+        try {
+          await syncOne();
+          expect(true).toBe(false); // Should not reach here
+        } catch (caughtError) {
+          // Error should be exactly the same object/value
+          expect(caughtError).toBe(error);
+        }
+
+        expect(mockSync).toHaveBeenCalledTimes(1);
+      }
+    });
+
+    it("should preserve error stack traces", async () => {
+      const errorWithStack = new Error("Error with stack trace");
+      const originalStack = errorWithStack.stack;
+      mockSync.mockRejectedValue(errorWithStack);
+
+      try {
+        await syncOne();
+        expect(true).toBe(false); // Should not reach here
+      } catch (error) {
+        // Stack trace should be preserved
+        expect(error.stack).toBe(originalStack);
+      }
+
+      expect(mockSync).toHaveBeenCalledTimes(1);
+    });
+
+    it("should handle promise rejection timing correctly", async () => {
+      let rejectionHandled = false;
+      
+      mockSync.mockImplementation(async () => {
+        await new Promise(resolve => setTimeout(resolve, 10));
+        throw new Error("Delayed rejection");
+      });
+
+      try {
+        await syncOne();
+        expect(true).toBe(false); // Should not reach here
+      } catch (error) {
+        rejectionHandled = true;
+        expect(error.message).toBe("Delayed rejection");
+      }
+
+      expect(rejectionHandled).toBe(true);
+      expect(mockSync).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("edge cases and robustness", () => {
+    it("should handle sync returning resolved promises correctly", async () => {
+      // Test with already resolved promise
+      mockSync.mockReturnValue(Promise.resolve(undefined));
+
+      const result = await syncOne();
+
+      expect(result).toBeUndefined();
+      expect(mockSync).toHaveBeenCalledTimes(1);
+    });
+
+    it("should handle sync returning rejected promises correctly", async () => {
+      // Test with already rejected promise
+      const error = new Error("Pre-rejected promise");
+      mockSync.mockReturnValue(Promise.reject(error));
+
+      await expect(syncOne()).rejects.toThrow("Pre-rejected promise");
+      expect(mockSync).toHaveBeenCalledTimes(1);
+    });
+
+    it("should work correctly when called in quick succession", async () => {
+      mockSync.mockResolvedValue(undefined);
+
+      // Fire off multiple calls simultaneously
+      const promises = [
+        syncOne(),
+        syncOne(),
+        syncOne()
+      ];
+
+      await Promise.all(promises);
+
+      // Each call should result in a separate call to sync
+      expect(mockSync).toHaveBeenCalledTimes(3);
+    });
+
+    it("should handle mixed success and failure scenarios", async () => {
+      // First call succeeds
+      mockSync.mockResolvedValue(undefined);
+      await syncOne();
+      expect(mockSync).toHaveBeenCalledTimes(1);
+
+      // Second call fails
+      mockSync.mockClear();
+      mockSync.mockRejectedValue(new Error("Second call failed"));
+      await expect(syncOne()).rejects.toThrow("Second call failed");
+      expect(mockSync).toHaveBeenCalledTimes(1);
+
+      // Third call succeeds again
+      mockSync.mockClear();
+      mockSync.mockResolvedValue(undefined);
+      await syncOne();
       expect(mockSync).toHaveBeenCalledTimes(1);
     });
   });

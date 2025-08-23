@@ -561,7 +561,78 @@ done`;
     });
   });
 
-  describe("ralph.sh specific behavior", () => {
+  describe("ralph.sh script verification and execution", () => {
+    it("should verify ralph.sh exists before attempting execution", async () => {
+      // Don't create any files
+      const fsAccessSpy = vi.spyOn(fs, "access");
+      
+      await expect(syncForever()).rejects.toThrow("Process exit called with code 1");
+      
+      // Verify fs.access was called to check script existence
+      expect(fsAccessSpy).toHaveBeenCalledWith(join(tempDir, ".repomirror", "ralph.sh"));
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Error: .repomirror/ralph.sh not found.")
+      );
+      
+      fsAccessSpy.mockRestore();
+    });
+
+    it("should handle gracefully when .repomirror directory is missing", async () => {
+      const fsAccessSpy = vi.spyOn(fs, "access");
+      
+      await expect(syncForever()).rejects.toThrow("Process exit called with code 1");
+      
+      // Verify the error is caught and handled gracefully
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Error: .repomirror/ralph.sh not found. Run 'npx repomirror init' first.")
+      );
+      expect(processMock.exit).toHaveBeenCalledWith(1);
+      expect(mockExeca).not.toHaveBeenCalled();
+      
+      fsAccessSpy.mockRestore();
+    });
+
+    it("should handle file system permission errors during script verification", async () => {
+      const fsAccessSpy = vi.spyOn(fs, "access");
+      const permissionError = new Error("EACCES: permission denied");
+      (permissionError as any).code = "EACCES";
+      fsAccessSpy.mockRejectedValue(permissionError);
+      
+      await expect(syncForever()).rejects.toThrow("Process exit called with code 1");
+      
+      // Should treat permission errors as "file not found" for user-friendly message
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Error: .repomirror/ralph.sh not found. Run 'npx repomirror init' first.")
+      );
+      
+      fsAccessSpy.mockRestore();
+    });
+
+    it("should only execute ralph.sh after successful verification", async () => {
+      const fsAccessSpy = vi.spyOn(fs, "access");
+      
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "ralph.sh": "#!/bin/bash\necho 'verified and running'",
+        },
+      });
+      
+      mockExeca.mockResolvedValue({ stdout: "verified and running", stderr: "", exitCode: 0 });
+      
+      await syncForever();
+      
+      // Verify fs.access was called first
+      expect(fsAccessSpy).toHaveBeenCalledWith(join(tempDir, ".repomirror", "ralph.sh"));
+      
+      // Then execa was called
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "ralph.sh")], {
+        stdio: "inherit",
+        cwd: tempDir,
+      });
+      
+      fsAccessSpy.mockRestore();
+    });
+
     it("should specifically look for ralph.sh not sync.sh", async () => {
       // Create only sync.sh, not ralph.sh
       await createMockFileStructure(tempDir, {
@@ -629,6 +700,279 @@ done`;
       );
       
       expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("Running ralph.sh (continuous sync)..."));
+    });
+
+    it("should demonstrate continuous loop verification through script content", async () => {
+      const continuousLoopScript = `#!/bin/bash
+set -euo pipefail
+
+echo "Starting continuous sync loop..."
+
+while true; do
+  echo "[$(date)] Running sync cycle"
+  
+  if ./.repomirror/sync.sh; then
+    echo "[$(date)] Sync completed successfully"
+  else
+    echo "[$(date)] Sync failed, will retry in 10 seconds"
+  fi
+  
+  echo -e "===SLEEP===\\n===SLEEP===\\n"
+  echo "Waiting 10 seconds before next cycle..."
+  sleep 10
+done`;
+
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "ralph.sh": continuousLoopScript,
+        },
+      });
+
+      // Mock long-running process that demonstrates continuous behavior
+      mockExeca.mockResolvedValue({ 
+        stdout: "Starting continuous sync loop...\n[date] Running sync cycle", 
+        stderr: "", 
+        exitCode: 0 
+      });
+
+      await syncForever();
+
+      // Verify the continuous script is executed properly
+      expect(mockExeca).toHaveBeenCalledWith(
+        "bash",
+        [join(tempDir, ".repomirror", "ralph.sh")],
+        expect.objectContaining({
+          stdio: "inherit",  // This allows the continuous output to be seen
+        })
+      );
+    });
+
+    it("should verify ralph.sh runs forever through proper execution setup", async () => {
+      const foreverScript = `#!/bin/bash
+set -euo pipefail
+
+# Setup trap for graceful shutdown
+trap 'echo "Shutting down gracefully..."; exit 0' SIGINT SIGTERM
+
+echo "Starting forever loop..."
+counter=0
+
+while true; do
+  ((counter++))
+  echo "[Cycle $counter] Running sync..."
+  
+  # Simulate sync work
+  if ./.repomirror/sync.sh; then
+    echo "[Cycle $counter] Sync completed"
+  else
+    echo "[Cycle $counter] Sync failed, continuing..."
+  fi
+  
+  echo -e "===SLEEP===\\n===SLEEP===\\n"
+  echo "Sleeping 10 seconds before next cycle..."
+  sleep 10
+done`;
+
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "ralph.sh": foreverScript,
+        },
+      });
+
+      // Mock a long-running process that eventually gets interrupted
+      const longRunningOutput = "Starting forever loop...\n[Cycle 1] Running sync...\n[Cycle 1] Sync completed\n===SLEEP===\n===SLEEP===\nSleeping 10 seconds before next cycle...";
+      mockExeca.mockResolvedValue({ 
+        stdout: longRunningOutput, 
+        stderr: "", 
+        exitCode: 0 
+      });
+
+      await syncForever();
+
+      // Verify the forever script is properly executed
+      expect(mockExeca).toHaveBeenCalledWith(
+        "bash",
+        [join(tempDir, ".repomirror", "ralph.sh")],
+        expect.objectContaining({
+          stdio: "inherit", // Essential for monitoring continuous output
+          cwd: tempDir,
+        })
+      );
+      
+      expect(consoleMock.log).toHaveBeenCalledWith(
+        expect.stringContaining("Running ralph.sh (continuous sync)...")
+      );
+      expect(consoleMock.log).toHaveBeenCalledWith(
+        expect.stringContaining("Press Ctrl+C to stop")
+      );
+    });
+  });
+
+  describe("enhanced signal handling and process management", () => {
+    it("should handle SIGTERM gracefully as a shutdown signal", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "ralph.sh": "#!/bin/bash\ntrap 'exit 0' SIGTERM; while true; do sleep 1; done",
+        },
+      });
+
+      const sigtermError = new Error("Process terminated");
+      (sigtermError as any).signal = "SIGTERM";
+      mockExeca.mockRejectedValue(sigtermError);
+
+      await expect(syncForever()).rejects.toThrow("Process exit called with code 1");
+
+      // SIGTERM should be treated as an error, not graceful user stop
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Sync forever failed: Process terminated")
+      );
+      expect(consoleMock.log).not.toHaveBeenCalledWith(expect.stringContaining("Stopped by user"));
+      expect(processMock.exit).toHaveBeenCalledWith(1);
+    });
+
+    it("should properly distinguish SIGINT from other termination signals", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "ralph.sh": "#!/bin/bash\nwhile true; do sleep 1; done",
+        },
+      });
+
+      // Test SIGINT (user interrupt) - should be handled gracefully
+      const sigintError = new Error("User interrupted");
+      (sigintError as any).signal = "SIGINT";
+      mockExeca.mockRejectedValue(sigintError);
+
+      await syncForever();
+
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("Stopped by user"));
+      expect(processMock.exit).not.toHaveBeenCalled();
+      
+      // Reset mocks and test non-SIGINT signal
+      mockExeca.mockClear();
+      consoleMock.log.mockClear();
+      consoleMock.error.mockClear();
+      
+      const sigkillError = new Error("Process killed");
+      (sigkillError as any).signal = "SIGKILL";
+      mockExeca.mockRejectedValue(sigkillError);
+
+      await expect(syncForever()).rejects.toThrow("Process exit called with code 1");
+      
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Sync forever failed: Process killed")
+      );
+      expect(consoleMock.log).not.toHaveBeenCalledWith(expect.stringContaining("Stopped by user"));
+    });
+  });
+
+  describe("shell script execution and process management", () => {
+    it("should execute ralph.sh with bash shell for proper script interpretation", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "ralph.sh": "#!/bin/bash\nset -euo pipefail\necho 'bash specific features'",
+        },
+      });
+
+      mockExeca.mockResolvedValue({ stdout: "bash specific features", stderr: "", exitCode: 0 });
+
+      await syncForever();
+
+      // Verify bash is specifically used as the shell
+      expect(mockExeca).toHaveBeenCalledWith(
+        "bash", 
+        expect.arrayContaining([join(tempDir, ".repomirror", "ralph.sh")]), 
+        expect.any(Object)
+      );
+    });
+
+    it("should pass correct execution context to subprocess", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "ralph.sh": "#!/bin/bash\necho \"CWD: $PWD\"",
+        },
+      });
+
+      mockExeca.mockResolvedValue({ stdout: `CWD: ${tempDir}`, stderr: "", exitCode: 0 });
+
+      await syncForever();
+
+      expect(mockExeca).toHaveBeenCalledWith(
+        "bash",
+        [join(tempDir, ".repomirror", "ralph.sh")],
+        expect.objectContaining({
+          stdio: "inherit",    // For real-time output
+          cwd: tempDir,        // Correct working directory
+        })
+      );
+    });
+
+    it("should maintain process inheritance for continuous execution monitoring", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "ralph.sh": `#!/bin/bash
+while true; do
+  echo "[$(date)] Continuous execution..."
+  sleep 1
+done`,
+        },
+      });
+
+      // Mock a process that produces continuous output
+      mockExeca.mockResolvedValue({ 
+        stdout: "[date] Continuous execution...\n[date] Continuous execution...", 
+        stderr: "", 
+        exitCode: 0 
+      });
+
+      await syncForever();
+
+      // Verify stdio inheritance allows real-time monitoring
+      expect(mockExeca).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Array),
+        expect.objectContaining({
+          stdio: "inherit", // Critical for continuous process monitoring
+        })
+      );
+    });
+
+    it("should handle script execution failures with proper error context", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "ralph.sh": "#!/bin/bash\nexit 42",
+        },
+      });
+
+      const executionError = new Error("Script execution failed with exit code 42");
+      (executionError as any).exitCode = 42;
+      (executionError as any).stderr = "Script error output";
+      mockExeca.mockRejectedValue(executionError);
+
+      await expect(syncForever()).rejects.toThrow("Process exit called with code 1");
+
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Sync forever failed: Script execution failed with exit code 42")
+      );
+      expect(processMock.exit).toHaveBeenCalledWith(1);
+    });
+
+    it("should handle permission denied during script execution", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "ralph.sh": "#!/bin/bash\necho 'should not run'",
+        },
+      });
+
+      const permissionError = new Error("Permission denied");
+      (permissionError as any).code = "EACCES";
+      (permissionError as any).errno = -13;
+      mockExeca.mockRejectedValue(permissionError);
+
+      await expect(syncForever()).rejects.toThrow("Process exit called with code 1");
+
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Sync forever failed: Permission denied")
+      );
     });
   });
 });

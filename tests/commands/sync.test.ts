@@ -311,6 +311,344 @@ cat .repomirror/prompt.md | \\
     });
   });
 
+  describe("shell script execution with different exit codes", () => {
+    it("should handle script that exits with code 2", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\nexit 2",
+        },
+      });
+
+      // Mock execa to reject with exit code 2
+      const scriptError = new Error("Command failed with exit code 2");
+      (scriptError as any).exitCode = 2;
+      (scriptError as any).stderr = "Error: Invalid argument";
+      mockExeca.mockRejectedValue(scriptError);
+
+      await expect(sync()).rejects.toThrow("Process exit called with code 1");
+
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("Running sync.sh..."));
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Sync failed: Command failed with exit code 2")
+      );
+      expect(processMock.exit).toHaveBeenCalledWith(1);
+    });
+
+    it("should handle script that exits with code 127 (command not found)", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\nnonexistent_command",
+        },
+      });
+
+      const scriptError = new Error("Command failed: nonexistent_command: command not found");
+      (scriptError as any).exitCode = 127;
+      mockExeca.mockRejectedValue(scriptError);
+
+      await expect(sync()).rejects.toThrow("Process exit called with code 1");
+
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Sync failed: Command failed: nonexistent_command: command not found")
+      );
+      expect(processMock.exit).toHaveBeenCalledWith(1);
+    });
+
+    it("should handle script that succeeds with non-zero but success exit code", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\necho 'success with warnings'\nexit 0",
+        },
+      });
+
+      mockExeca.mockResolvedValue({ 
+        stdout: "success with warnings", 
+        stderr: "warning: deprecated option used", 
+        exitCode: 0 
+      });
+
+      await sync();
+
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("Running sync.sh..."));
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("Sync completed successfully"));
+      expect(processMock.exit).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("stdout and stderr capture handling", () => {
+    it("should handle scripts that output to stdout", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\necho 'Processing files...'\necho 'Sync complete'",
+        },
+      });
+
+      // Note: With stdio: 'inherit', stdout/stderr go directly to console, not captured
+      mockExeca.mockResolvedValue({ 
+        stdout: "Processing files...\nSync complete", 
+        stderr: "", 
+        exitCode: 0 
+      });
+
+      await sync();
+
+      // Verify execa was called with stdio: 'inherit' which means output goes directly to console
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "sync.sh")], {
+        stdio: "inherit",
+        cwd: tempDir,
+      });
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("Sync completed successfully"));
+    });
+
+    it("should handle scripts that output to stderr", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\necho 'warning message' >&2\nexit 0",
+        },
+      });
+
+      mockExeca.mockResolvedValue({ 
+        stdout: "", 
+        stderr: "warning message", 
+        exitCode: 0 
+      });
+
+      await sync();
+
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "sync.sh")], {
+        stdio: "inherit",
+        cwd: tempDir,
+      });
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("Sync completed successfully"));
+    });
+
+    it("should handle scripts with mixed stdout and stderr output", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\necho 'Starting sync'\necho 'warning' >&2\necho 'Finished'",
+        },
+      });
+
+      mockExeca.mockResolvedValue({ 
+        stdout: "Starting sync\nFinished", 
+        stderr: "warning", 
+        exitCode: 0 
+      });
+
+      await sync();
+
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("Sync completed successfully"));
+      expect(processMock.exit).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("permission and execution error handling", () => {
+    it("should handle permission denied when executing script", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\necho 'test'",
+        },
+      });
+
+      // Mock execa to reject with permission denied error
+      const permissionError = new Error("Permission denied");
+      (permissionError as any).code = "EACCES";
+      mockExeca.mockRejectedValue(permissionError);
+
+      await expect(sync()).rejects.toThrow("Process exit called with code 1");
+
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Sync failed: Permission denied")
+      );
+      expect(processMock.exit).toHaveBeenCalledWith(1);
+    });
+
+    it("should handle bash command not found error", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\necho 'test'",
+        },
+      });
+
+      const commandError = new Error("bash: command not found");
+      (commandError as any).code = "ENOENT";
+      mockExeca.mockRejectedValue(commandError);
+
+      await expect(sync()).rejects.toThrow("Process exit called with code 1");
+
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Sync failed: bash: command not found")
+      );
+      expect(processMock.exit).toHaveBeenCalledWith(1);
+    });
+
+    it("should handle file system errors during script execution", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\necho 'test'",
+        },
+      });
+
+      const fsError = new Error("EIO: i/o error, read");
+      (fsError as any).code = "EIO";
+      mockExeca.mockRejectedValue(fsError);
+
+      await expect(sync()).rejects.toThrow("Process exit called with code 1");
+
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Sync failed: EIO: i/o error, read")
+      );
+      expect(processMock.exit).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe("working directory context preservation", () => {
+    it("should maintain current working directory after sync execution", async () => {
+      const originalCwd = tempDir;
+      processMock.cwd.mockReturnValue(originalCwd);
+
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\ncd / && echo 'changed directory'",
+        },
+      });
+
+      mockExeca.mockResolvedValue({ stdout: "changed directory", stderr: "", exitCode: 0 });
+
+      await sync();
+
+      // Verify that the working directory is preserved in the execa call
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "sync.sh")], {
+        stdio: "inherit",
+        cwd: originalCwd,
+      });
+
+      // The process.cwd() should still return the original directory
+      expect(processMock.cwd).toHaveBeenCalled();
+    });
+
+    it("should handle scripts that change directory internally", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": `#!/bin/bash
+cd subdir
+echo "Working in $(pwd)"
+cd ..
+echo "Back to $(pwd)"`,
+        },
+        "subdir": {},
+      });
+
+      mockExeca.mockResolvedValue({ 
+        stdout: `Working in ${tempDir}/subdir\nBack to ${tempDir}`, 
+        stderr: "", 
+        exitCode: 0 
+      });
+
+      await sync();
+
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("Sync completed successfully"));
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "sync.sh")], {
+        stdio: "inherit",
+        cwd: tempDir,
+      });
+    });
+
+    it("should work correctly when invoked from different working directories", async () => {
+      // Create nested directory structure
+      const nestedDir = join(tempDir, "nested", "deep");
+      await fs.mkdir(nestedDir, { recursive: true });
+      
+      // Create script in the nested directory
+      await createMockFileStructure(nestedDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\necho 'nested sync'",
+        },
+      });
+
+      // Mock cwd to return the nested directory
+      processMock.cwd.mockReturnValue(nestedDir);
+
+      mockExeca.mockResolvedValue({ stdout: "nested sync", stderr: "", exitCode: 0 });
+
+      await sync();
+
+      // Should use the nested directory path
+      expect(mockExeca).toHaveBeenCalledWith(
+        "bash", 
+        [join(nestedDir, ".repomirror", "sync.sh")], 
+        {
+          stdio: "inherit",
+          cwd: nestedDir,
+        }
+      );
+    });
+  });
+
+  describe("script verification and existence checks", () => {
+    it("should verify script exists before execution using fs.access", async () => {
+      const fsAccessSpy = vi.spyOn(fs, "access");
+      
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\necho 'test'",
+        },
+      });
+
+      mockExeca.mockResolvedValue({ stdout: "test", stderr: "", exitCode: 0 });
+
+      await sync();
+
+      // Verify fs.access was called to check file existence
+      expect(fsAccessSpy).toHaveBeenCalledWith(join(tempDir, ".repomirror", "sync.sh"));
+      
+      fsAccessSpy.mockRestore();
+    });
+
+    it("should handle fs.access throwing ENOENT error", async () => {
+      const fsAccessSpy = vi.spyOn(fs, "access");
+      const enoentError = new Error("ENOENT: no such file or directory");
+      (enoentError as any).code = "ENOENT";
+      fsAccessSpy.mockRejectedValue(enoentError);
+
+      await expect(sync()).rejects.toThrow("Process exit called with code 1");
+
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.")
+      );
+      expect(mockExeca).not.toHaveBeenCalled();
+      
+      fsAccessSpy.mockRestore();
+    });
+
+    it("should handle fs.access throwing ENOTDIR error", async () => {
+      // Create a file where the .repomirror directory should be
+      await fs.writeFile(join(tempDir, ".repomirror"), "not a directory");
+
+      await expect(sync()).rejects.toThrow("Process exit called with code 1");
+
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.")
+      );
+      expect(mockExeca).not.toHaveBeenCalled();
+    });
+
+    it("should handle script that exists but is not readable", async () => {
+      const fsAccessSpy = vi.spyOn(fs, "access");
+      const permissionError = new Error("EACCES: permission denied");
+      (permissionError as any).code = "EACCES";
+      fsAccessSpy.mockRejectedValue(permissionError);
+
+      await expect(sync()).rejects.toThrow("Process exit called with code 1");
+
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.")
+      );
+      expect(mockExeca).not.toHaveBeenCalled();
+      
+      fsAccessSpy.mockRestore();
+    });
+  });
+
   describe("edge cases", () => {
     it("should handle empty script content", async () => {
       await createMockFileStructure(tempDir, {
@@ -389,6 +727,99 @@ fi`;
           cwd: subdirPath,
         })
       );
+    });
+
+    it("should handle very large script files", async () => {
+      // Create a large script with many lines
+      const largeScript = [
+        "#!/bin/bash",
+        "set -e",
+        ...Array(1000).fill(0).map((_, i) => `echo "Line ${i}"`),
+        "echo 'Large script completed'"
+      ].join("\n");
+
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": largeScript,
+        },
+      });
+
+      mockExeca.mockResolvedValue({ stdout: "Large script completed", stderr: "", exitCode: 0 });
+
+      await sync();
+
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "sync.sh")], {
+        stdio: "inherit",
+        cwd: tempDir,
+      });
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("Sync completed successfully"));
+    });
+
+    it("should handle scripts with special characters in path", async () => {
+      // Test script execution when the path contains special characters
+      const specialDir = join(tempDir, "dir with spaces");
+      await fs.mkdir(specialDir, { recursive: true });
+      
+      processMock.cwd.mockReturnValue(specialDir);
+
+      await createMockFileStructure(specialDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\necho 'special path sync'",
+        },
+      });
+
+      mockExeca.mockResolvedValue({ stdout: "special path sync", stderr: "", exitCode: 0 });
+
+      await sync();
+
+      expect(mockExeca).toHaveBeenCalledWith(
+        "bash", 
+        [join(specialDir, ".repomirror", "sync.sh")], 
+        {
+          stdio: "inherit",
+          cwd: specialDir,
+        }
+      );
+    });
+
+    it("should handle script execution timeout scenarios", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\nsleep 300",
+        },
+      });
+
+      // Mock a timeout error
+      const timeoutError = new Error("Command timed out after 30000 milliseconds");
+      (timeoutError as any).timedOut = true;
+      mockExeca.mockRejectedValue(timeoutError);
+
+      await expect(sync()).rejects.toThrow("Process exit called with code 1");
+
+      expect(consoleMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Sync failed: Command timed out after 30000 milliseconds")
+      );
+      expect(processMock.exit).toHaveBeenCalledWith(1);
+    });
+
+    it("should handle scripts with binary output", async () => {
+      await createMockFileStructure(tempDir, {
+        ".repomirror": {
+          "sync.sh": "#!/bin/bash\nprintf '\\x00\\x01\\x02\\x03'",
+        },
+      });
+
+      // Mock binary output
+      mockExeca.mockResolvedValue({ 
+        stdout: Buffer.from([0, 1, 2, 3]).toString(), 
+        stderr: "", 
+        exitCode: 0 
+      });
+
+      await sync();
+
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("Sync completed successfully"));
+      expect(processMock.exit).not.toHaveBeenCalled();
     });
   });
 

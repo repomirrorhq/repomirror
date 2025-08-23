@@ -5,7 +5,7 @@ one line use prompt that asks
 ```
 I'll help you maintain a transformed copy of this repo:
 
-Source Repo you want to transform: [..] # note 0
+Source Repo you want to tckransform: [..] # note 0
 Where do you want to transform code to: [..] # note 1
 What changes do you want to make: [e.g. "translate this python repo to typescript"] 
 ```
