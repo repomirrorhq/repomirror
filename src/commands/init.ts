@@ -13,10 +13,29 @@ interface InitOptions {
   transformationInstructions: string;
 }
 
+interface RemoteConfig {
+  url: string;
+  branch: string;
+  auto_push?: boolean;
+}
+
 interface RepoMirrorConfig {
   sourceRepo: string;
   targetRepo: string;
   transformationInstructions: string;
+  remotes?: {
+    [remoteName: string]: RemoteConfig;
+  };
+  push?: {
+    default_remote?: string;
+    default_branch?: string;
+    commit_prefix?: string;
+  };
+  pull?: {
+    auto_sync?: boolean;
+    source_remote?: string;
+    source_branch?: string;
+  };
 }
 
 async function loadExistingConfig(): Promise<Partial<RepoMirrorConfig> | null> {
@@ -302,7 +321,10 @@ You should follow the format EXACTLY, filling in information based on what you l
   })) {
     if (message.type === "result") {
       if (message.is_error) {
-        throw new Error((message as any).result || "Claude SDK error during prompt generation");
+        throw new Error(
+          (message as any).result ||
+            "Claude SDK error during prompt generation",
+        );
       }
       result = (message as any).result || "";
       break;
@@ -310,7 +332,9 @@ You should follow the format EXACTLY, filling in information based on what you l
   }
 
   if (!result) {
-    throw new Error("Failed to generate transformation prompt - no result received");
+    throw new Error(
+      "Failed to generate transformation prompt - no result received",
+    );
   }
 
   // Replace placeholders with actual paths
