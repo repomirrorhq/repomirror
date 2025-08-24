@@ -55,7 +55,7 @@ Keep track of your current status in browser-use-ts/agent/TODO.md
 
 After a few iterations of the loop, it seemed to be on track:
 
-![First few commits](./assets/first-commits)
+![First few commits](./assets/first-commits.png)
 
 ### what happened
 
@@ -67,7 +67,9 @@ We came back in the morning to an [almost fully functional port](https://github.
 
 Here it is scraping the top 3 posts from Hacker News.
 
-![Better Use scraping top HN posts](./assets/better-use.webm)
+[better-use.webm](https://github.com/user-attachments/assets/bdd15e9e-08e4-48a2-a6f9-05a550347c46)
+
+[view on youtube](https://www.youtube.com/watch?v=fqp8EbYOPk8)
 
 Here's the Browser Use founder [@gregpr07](https://x.com/gregpr07), checking out the code. we think he liked it.
 
@@ -150,7 +152,10 @@ After the init phase, you'll have:
 
 When you've checked out the prompt and you're ready to test it, you can run `npx repomirror sync` to do a single iteration of the loop, and you can run `npx repomirror sync-forever` to kick off the ralph infinite loop:
 
-[![repomirror cli webm](./assets/repomirror.webm)](https://www.youtube.com/watch?v=_GxemIzk2lo)
+[repomirror.webm](https://github.com/user-attachments/assets/7616825a-064d-4a5b-b1bc-08fc5f816172)
+
+[view on youtube](https://www.youtube.com/watch?v=_GxemIzk2lo)
+
 
 If you wanna play with some of the other repos, they're listed on the [readme](https://github.com/repomirrorhq/repomirror?tab=readme-ov-file#projects). [better-use](https://github.com/repomirrorhq/better-use) is now on npm:
 
@@ -169,10 +174,8 @@ As you might imagine, our thoughts are all a little chaotic and conflicting, so 
 
 > The minimalist in me is happy to have hard proof that we are probably overcomplicating things. 
 
-> scary how well this worked. I'm never buying b2b saas again
-
 > clear to me that we're at the very very beginning of the exponential takeoff curve
 
-Thanks to the whole team [@yonom](https://github.com/yonom), [@dexhorthy](https://github.com/dexhorthy), [@lantos1618](https://github.com/lantos1618) and [@AVGVSTVS96](https://github.com/AVGVSTVS96), and to Geoff for the inspiration.
+Thanks to the whole team [@yonom](https://x.com/simonfarshid) and [@AVGVSTVS96](https://x.com/AVGVSTVS96) from [assistant-ui](https://github.com/assistant-ui), [@dexhorthy](https://x.com/dexhorthy) from [HumanLayer](https://humanlayer.dev),  [@Lantos1618](https://x.com/Lantos1618) from [github.gg](https://github.gg), and to [Geoff](https://x.com/GeoffreyHuntley) for the inspiration.
 
 
