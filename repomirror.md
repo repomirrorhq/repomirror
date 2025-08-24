@@ -41,7 +41,7 @@ testing.
 
 ### porting browser-use to typescript
 
-Since we were at the YC Agents hackathon, we wanted to do something related to the sponsor tooling, so we decided to see if ralph could port [Browser Use](https://github.com/browser-use/browser-use), a YC-backed web agent tool, from python to typescript.
+Since we were at a hackathon, we wanted to do something related to the sponsor tooling, so we decided to see if ralph could port [Browser Use](https://github.com/browser-use/browser-use), a YC-backed web agent tool, from python to typescript.
 
 We kicked off the loop with a simple prompt:
 
