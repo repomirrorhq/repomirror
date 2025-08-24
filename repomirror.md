@@ -11,7 +11,7 @@ Turns out, what happens is: you wake up to 1,000+ commits, six ported codebases,
 We recently stumbled upon a technique promoted by [Geoff Huntley](https://ghuntley.com/ralph/), to run a coding agent in a while loop:
 
 ```
-while :; do cat prompt.md | claude -p; done
+while :; do cat prompt.md | amp; done
 ```
 
 One of our team members, Simon, is the creator of assistant-ui, a react library for building AI interfaces in React. He gets a lot of requests to add Vue.js support, and he wondered if the approach would work for porting assistant-ui to vue.js.
