@@ -18,7 +18,7 @@ One of our team members, Simon, is the creator of assistant-ui, a react library 
 
 ### how it works
 
-basically what we ended up doing sounds really dumb, but it works suprisingly well - describes areally simple bash script, that essentially runs a coding agent in a loop forever using a static prompt. We used claude code:
+basically what we ended up doing sounds really dumb, but it works suprisingly well - We used claude code for the loop:
 
 ```
 while :; do cat prompt.md | claude -p --dangerously-skip-permissions; done
