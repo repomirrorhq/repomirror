@@ -97,7 +97,7 @@
 ## Current Status
 ✅ **FULLY IMPLEMENTED** - All planned features completed successfully:
 - All CLI commands implemented and working
-- Init command creates proper .repomirror/ structure
+- Init command creates proper .repomirror/ structure with **template-based shell script generation**
 - Sync commands execute shell scripts correctly
 - Visualize command provides colored output
 - Remote repository management (add/list/remove remotes)
@@ -109,10 +109,33 @@
 - GitHub Actions workflow generation for CI/CD
 - Issue fixer command for automatic issue detection and resolution
 - GitHub Actions PR sync commands (`setup-github-pr-sync` and `dispatch-sync`)
+- **Shell script templates properly bundled in dist/ package** (matches spec requirement)
 - Comprehensive test suite with 293 tests passing (2 skipped for interactive mode)
 - TypeScript build passing with full type safety
 - All linting checks passing
 - **Ready for production usage with complete feature set**
+
+## Recent Improvements
+
+### Template-Based Shell Script Generation - IMPLEMENTED ✅
+**Issue**: The spec required "The shell scripts are included in the npm dist/ bundle and baked into the package so they can be copied out of the package root by `npx repomirror init`" but the implementation was generating scripts inline.
+
+**Solution Implemented**:
+- Created template files in `src/templates/`: `sync.sh.template`, `ralph.sh.template`, `gitignore.template`
+- Updated build process in `package.json` to copy templates to `dist/templates/`
+- Modified `src/commands/init.ts` to read templates from package and substitute variables
+- Added template location resolution (tries `dist/templates` first, falls back to `src/templates`)
+- Supports `${targetRepo}` variable substitution in sync script template
+- All 293 tests continue to pass
+- Now fully compliant with spec requirement
+
+**Files Modified**:
+- `src/templates/sync.sh.template` (new)
+- `src/templates/ralph.sh.template` (new)  
+- `src/templates/gitignore.template` (new)
+- `package.json` (updated build process and files array)
+- `src/commands/init.ts` (replaced inline generation with template-based)
+- `tests/commands/init.test.ts` (updated mocks for template handling)
 
 ## Known Issues & Critical Fixes Needed
 

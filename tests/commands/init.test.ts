@@ -488,7 +488,36 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
         if (path === defaultTarget) {
           return Promise.resolve();
         }
+        // Allow access to template files
+        if (typeof path === 'string' && path.includes('templates')) {
+          return Promise.resolve();
+        }
         return Promise.reject(new Error("Not found"));
+      });
+
+      // Mock readFile for templates
+      vi.spyOn(fs, "readFile").mockImplementation(async (path, encoding) => {
+        if (typeof path === 'string') {
+          if (path.includes('sync.sh.template')) {
+            return `#!/bin/bash
+cat .repomirror/prompt.md | \\
+        claude -p --output-format=stream-json --verbose --dangerously-skip-permissions --add-dir \${targetRepo} | \\
+        tee -a .repomirror/claude_output.jsonl | \\
+        npx repomirror visualize --debug;`;
+          }
+          if (path.includes('ralph.sh.template')) {
+            return `#!/bin/bash
+while :; do
+  ./.repomirror/sync.sh
+  echo -e "===SLEEP===\\n===SLEEP===\\n"; echo 'looping';
+  sleep 10;
+done`;
+          }
+          if (path.includes('gitignore.template')) {
+            return 'claude_output.jsonl';
+          }
+        }
+        return Promise.reject(new Error("File not found"));
       });
 
       await init();

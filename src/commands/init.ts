@@ -469,32 +469,47 @@ async function createRepoMirrorFiles(
   // Create prompt.md
   await fs.writeFile(join(repoMirrorDir, "prompt.md"), optimizedPrompt);
 
-  // Create sync.sh
-  const syncScript = `#!/bin/bash
-cat .repomirror/prompt.md | \\
-        claude -p --output-format=stream-json --verbose --dangerously-skip-permissions --add-dir ${targetRepo} | \\
-        tee -a .repomirror/claude_output.jsonl | \\
-        npx repomirror visualize --debug;`;
+  // Get template directory - look for templates in the package
+  const templateDir = await getTemplateDir();
 
+  // Create sync.sh from template
+  const syncTemplate = await fs.readFile(join(templateDir, "sync.sh.template"), "utf8");
+  const syncScript = syncTemplate.replace(/\${targetRepo}/g, targetRepo);
   await fs.writeFile(join(repoMirrorDir, "sync.sh"), syncScript, {
     mode: 0o755,
   });
 
-  // Create ralph.sh
-  const ralphScript = `#!/bin/bash
-while :; do
-  ./.repomirror/sync.sh
-  echo -e "===SLEEP===\\n===SLEEP===\\n"; echo 'looping';
-  sleep 10;
-done`;
-
-  await fs.writeFile(join(repoMirrorDir, "ralph.sh"), ralphScript, {
+  // Create ralph.sh from template
+  const ralphTemplate = await fs.readFile(join(templateDir, "ralph.sh.template"), "utf8");
+  await fs.writeFile(join(repoMirrorDir, "ralph.sh"), ralphTemplate, {
     mode: 0o755,
   });
 
-  // Create .gitignore
+  // Create .gitignore from template
+  const gitignoreTemplate = await fs.readFile(join(templateDir, "gitignore.template"), "utf8");
   await fs.writeFile(
     join(repoMirrorDir, ".gitignore"),
-    "claude_output.jsonl\n",
+    gitignoreTemplate + "\n",
   );
+}
+
+async function getTemplateDir(): Promise<string> {
+  // First try to find templates in the package dist (for published package)
+  try {
+    const packageRoot = path.dirname(path.dirname(__dirname)); // From dist/commands to project root
+    const distTemplateDir = join(packageRoot, "dist", "templates");
+    await fs.access(distTemplateDir);
+    return distTemplateDir;
+  } catch {
+    // Fallback to src templates (for development and tests)
+    const packageRoot = path.dirname(path.dirname(__dirname)); // From src/commands to project root  
+    const srcTemplateDir = join(packageRoot, "src", "templates");
+    try {
+      await fs.access(srcTemplateDir);
+      return srcTemplateDir;
+    } catch {
+      // If neither works, throw a more helpful error
+      throw new Error(`Could not find templates in either dist/templates or src/templates. Package root: ${packageRoot}`);
+    }
+  }
 }
