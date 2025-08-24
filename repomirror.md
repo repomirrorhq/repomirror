@@ -99,7 +99,7 @@ We were pleasantly suprised to find that the agent wrote tests, kept to its orig
 After finishing the port, most of the agents settled for writing extra tests or contiuosly updating agent/TODO.md to clarify how "done" they were. In one instance, the agent actually used `pkill` [to terminate itself](https://www.youtube.com/watch?v=UOLBTRazZpM) after realizing it was stuck in an infinite loop. 
 
 
-![TODO IMG](agent stopping its own process)
+![Agent stopping itself](./assets/pkill.png)
 
 **Overachieving** 
 
