@@ -109,7 +109,7 @@ Another cool emergent behavior (as is common with LLMs) - After finishing the in
 
 **Keep the Prompt Simple** 
 
-Overall we found that less is more - a simple prompt is better than a complex one. You want to focus on the engine, not the scaffolding. Different members of our team kicking off different projects played around with instructions and ordering, here are a few of their prompts:
+Overall we found that less is more - a simple prompt is better than a complex one. You want to focus on the engine, not the scaffolding. Different members of our team kicking off different projects played around with instructions and ordering. You can view the actual prompts we used in the [prompts folder](./prompts/).
 
 At one point we tried “improving” the prompt with Claude’s help. It ballooned to 1,500 words. The agent immediately got slower and dumber. We went back to 103 words and it was back on track. 
 
