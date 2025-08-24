@@ -1,4 +1,4 @@
-# simonsays
+# repomirror
 
 A tool to perform transformations on code repositories with AI. Inspired by [@ghuntley](https://github.com/ghuntley)'s [ralph wiggum](https://ghuntley.com/ralph).
 
@@ -11,5 +11,4 @@ Some example projects maintained by repomirror:
 - [open-dedalus](https://github.com/yonom/open-dedalus) - open source clone of dedalus using `llms-full.txt`
 - [better-ui](https://github.com/lantos1618/better-ui/tree/lantos-aui) - Assistant UI + TRPC (ai ui with frontend and backend State)
 - [lynlan](https://github.com/lantos1618/lynlang) - GO + RUST + Haskel 
-## Usage
 
