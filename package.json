@@ -4,7 +4,7 @@
   "description": "Sync and transform repositories using AI agents",
   "main": "dist/index.js",
   "bin": {
-    "repomirror": "./dist/cli.js"
+    "simonsays": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
@@ -12,7 +12,8 @@
     "test": "vitest",
     "lint": "eslint src --ext .ts",
     "fix": "eslint src --ext .ts --fix && prettier --write 'src/**/*.ts'",
-    "check": "tsc --noEmit && npm run lint"
+    "check": "tsc --noEmit && npm run lint",
+    "publish": "npm run build && npm publish"
   },
   "keywords": [
     "repository",

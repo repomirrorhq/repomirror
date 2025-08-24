@@ -145,8 +145,8 @@ describe("init command", () => {
         prompt: expect.stringContaining("your task is to generate an optimized prompt"),
       });
 
-      // Verify .repomirror directory and files were created
-      const repoMirrorDir = join(tempSourceDir, ".repomirror");
+      // Verify .simonsays directory and files were created
+      const repoMirrorDir = join(tempSourceDir, ".simonsays");
       const stats = await fs.stat(repoMirrorDir);
       expect(stats.isDirectory()).toBe(true);
 
@@ -162,7 +162,7 @@ describe("init command", () => {
       // Check ralph.sh
       const ralphContent = await fs.readFile(join(repoMirrorDir, "ralph.sh"), "utf8");
       expect(ralphContent).toContain("while :");
-      expect(ralphContent).toContain("./.repomirror/sync.sh");
+      expect(ralphContent).toContain("./.simonsays/sync.sh");
 
       // Check .gitignore
       const gitignoreContent = await fs.readFile(join(repoMirrorDir, ".gitignore"), "utf8");
@@ -340,7 +340,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       await init();
 
       // Check that placeholders were replaced in the prompt.md file
-      const repoMirrorDir = join(tempSourceDir, ".repomirror");
+      const repoMirrorDir = join(tempSourceDir, ".simonsays");
       const promptContent = await fs.readFile(join(repoMirrorDir, "prompt.md"), "utf8");
       
       expect(promptContent).not.toContain("[SOURCE PATH]");
@@ -377,10 +377,10 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       });
     });
 
-    it("should create .repomirror directory", async () => {
+    it("should create .simonsays directory", async () => {
       await init();
 
-      const repoMirrorDir = join(tempSourceDir, ".repomirror");
+      const repoMirrorDir = join(tempSourceDir, ".simonsays");
       const stats = await fs.stat(repoMirrorDir);
       expect(stats.isDirectory()).toBe(true);
     });
@@ -388,7 +388,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
     it("should create prompt.md with correct content", async () => {
       await init();
 
-      const promptPath = join(tempSourceDir, ".repomirror", "prompt.md");
+      const promptPath = join(tempSourceDir, ".simonsays", "prompt.md");
       const content = await fs.readFile(promptPath, "utf8");
       expect(content).toBe(mockTransformationPrompt);
     });
@@ -396,27 +396,27 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
     it("should create executable sync.sh script", async () => {
       await init();
 
-      const syncPath = join(tempSourceDir, ".repomirror", "sync.sh");
+      const syncPath = join(tempSourceDir, ".simonsays", "sync.sh");
       const content = await fs.readFile(syncPath, "utf8");
       const stats = await fs.stat(syncPath);
 
       expect(content).toContain("#!/bin/bash");
-      expect(content).toContain("cat .repomirror/prompt.md");
+      expect(content).toContain("cat .simonsays/prompt.md");
       expect(content).toContain(`--add-dir ${tempTargetDir}`);
-      expect(content).toContain("npx repomirror visualize --debug");
+      expect(content).toContain("npx simonsays visualize --debug");
       expect(stats.mode & 0o111).toBeTruthy(); // Check executable bit
     });
 
     it("should create executable ralph.sh script", async () => {
       await init();
 
-      const ralphPath = join(tempSourceDir, ".repomirror", "ralph.sh");
+      const ralphPath = join(tempSourceDir, ".simonsays", "ralph.sh");
       const content = await fs.readFile(ralphPath, "utf8");
       const stats = await fs.stat(ralphPath);
 
       expect(content).toContain("#!/bin/bash");
       expect(content).toContain("while :");
-      expect(content).toContain("./.repomirror/sync.sh");
+      expect(content).toContain("./.simonsays/sync.sh");
       expect(content).toContain("sleep 10");
       expect(stats.mode & 0o111).toBeTruthy(); // Check executable bit
     });
@@ -424,14 +424,14 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
     it("should create .gitignore file", async () => {
       await init();
 
-      const gitignorePath = join(tempSourceDir, ".repomirror", ".gitignore");
+      const gitignorePath = join(tempSourceDir, ".simonsays", ".gitignore");
       const content = await fs.readFile(gitignorePath, "utf8");
 
       expect(content).toBe("claude_output.jsonl\n");
     });
 
     it("should handle file creation errors gracefully", async () => {
-      // Mock fs.mkdir to fail on the .repomirror directory creation
+      // Mock fs.mkdir to fail on the .simonsays directory creation
       // This happens in createRepoMirrorFiles which is inside the try-catch
       const mkdirSpy = vi.spyOn(fs, "mkdir");
       let callCount = 0;
@@ -441,7 +441,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
         if (callCount === 1) {
           return Promise.resolve(undefined);
         }
-        // Fail on the second call (for .repomirror directory)
+        // Fail on the second call (for .simonsays directory)
         throw new Error("Permission denied");
       });
 
@@ -544,7 +544,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       });
 
       // Check generated files contain custom values
-      const syncPath = join(customSourceDir, ".repomirror", "sync.sh");
+      const syncPath = join(customSourceDir, ".simonsays", "sync.sh");
       const syncContent = await fs.readFile(syncPath, "utf8");
       expect(syncContent).toContain(tempTargetDir);
       
@@ -652,10 +652,10 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
         expect.stringContaining("Next steps:")
       );
       expect(consoleMock.log).toHaveBeenCalledWith(
-        expect.stringContaining("npx repomirror sync")
+        expect.stringContaining("npx simonsays sync")
       );
       expect(consoleMock.log).toHaveBeenCalledWith(
-        expect.stringContaining("npx repomirror sync-forever")
+        expect.stringContaining("npx simonsays sync-forever")
       );
     });
   });
@@ -676,7 +676,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       });
     });
 
-    it("should create repomirror.yaml config file", async () => {
+    it("should create simonsays.yaml config file", async () => {
       mockExeca
         .mockResolvedValueOnce({ stdout: ".git", exitCode: 0 }) // git rev-parse
         .mockResolvedValueOnce({ 
@@ -692,7 +692,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
 
       await init();
 
-      const configPath = join(tempSourceDir, "repomirror.yaml");
+      const configPath = join(tempSourceDir, "simonsays.yaml");
       const configExists = await fs.stat(configPath).then(() => true).catch(() => false);
       expect(configExists).toBe(true);
 
@@ -706,10 +706,10 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
         transformationInstructions: mockInquirerResponses.transformationInstructions,
       });
 
-      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("✅ Saved configuration to repomirror.yaml"));
+      expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("✅ Saved configuration to simonsays.yaml"));
     });
 
-    it("should load existing repomirror.yaml as defaults", async () => {
+    it("should load existing simonsays.yaml as defaults", async () => {
       mockExeca
         .mockResolvedValueOnce({ stdout: ".git", exitCode: 0 }) // git rev-parse
         .mockResolvedValueOnce({ 
@@ -727,7 +727,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       
       const yaml = await import("yaml");
       const configContent = yaml.stringify(existingConfig);
-      await fs.writeFile(join(tempSourceDir, "repomirror.yaml"), configContent, "utf-8");
+      await fs.writeFile(join(tempSourceDir, "simonsays.yaml"), configContent, "utf-8");
 
       // Mock inquirer to use defaults - return the existing config values
       // Since the existing config is loaded, inquirer should get these as defaults
@@ -741,7 +741,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
 
       // Verify the existing config message was shown
       expect(consoleMock.log).toHaveBeenCalledWith(
-        expect.stringContaining("Found existing repomirror.yaml, using as defaults")
+        expect.stringContaining("Found existing simonsays.yaml, using as defaults")
       );
 
       // Verify the existing config was used
@@ -750,12 +750,12 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       });
 
       // Verify the config file was updated with the same values
-      const finalConfigContent = await fs.readFile(join(tempSourceDir, "repomirror.yaml"), "utf-8");
+      const finalConfigContent = await fs.readFile(join(tempSourceDir, "simonsays.yaml"), "utf-8");
       const finalConfig = yaml.parse(finalConfigContent);
       expect(finalConfig).toEqual(existingConfig);
     });
 
-    it("should handle corrupted repomirror.yaml gracefully", async () => {
+    it("should handle corrupted simonsays.yaml gracefully", async () => {
       mockExeca
         .mockResolvedValueOnce({ stdout: ".git", exitCode: 0 }) // git rev-parse
         .mockResolvedValueOnce({ 
@@ -765,7 +765,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
         .mockResolvedValueOnce({ stdout: "Hi there! How can I help you today?", exitCode: 0 }); // claude test
 
       // Create corrupted YAML file
-      await fs.writeFile(join(tempSourceDir, "repomirror.yaml"), "invalid: yaml: content: [", "utf-8");
+      await fs.writeFile(join(tempSourceDir, "simonsays.yaml"), "invalid: yaml: content: [", "utf-8");
 
       mockInquirerPrompt.mockResolvedValue({
         ...mockInquirerResponses,
@@ -776,11 +776,11 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
 
       // Should not show the existing config message
       expect(consoleMock.log).not.toHaveBeenCalledWith(
-        expect.stringContaining("Found existing repomirror.yaml, using as defaults")
+        expect.stringContaining("Found existing simonsays.yaml, using as defaults")
       );
 
       // Should create new valid config
-      const configPath = join(tempSourceDir, "repomirror.yaml");
+      const configPath = join(tempSourceDir, "simonsays.yaml");
       const configContent = await fs.readFile(configPath, "utf-8");
       const yaml = await import("yaml");
       const config = yaml.parse(configContent);
@@ -810,7 +810,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       await init();
 
       // Config should be saved in the source subdirectory when sourceRepo is relative
-      const configPath = join(tempSourceDir, "source/../source/./", "repomirror.yaml");
+      const configPath = join(tempSourceDir, "source/../source/./", "simonsays.yaml");
       const configContent = await fs.readFile(configPath, "utf-8");
       const yaml = await import("yaml");
       const config = yaml.parse(configContent);
@@ -866,7 +866,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
 
       // Verify config was saved with CLI values
       // Config should be saved in the cli-source subdirectory
-      const configPath = join(tempSourceDir, "cli-source", "repomirror.yaml");
+      const configPath = join(tempSourceDir, "cli-source", "simonsays.yaml");
       const configContent = await fs.readFile(configPath, "utf-8");
       const yaml = await import("yaml");
       const config = yaml.parse(configContent);
@@ -898,7 +898,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
 
       // Verify final config contains CLI override
       // Config should be saved in the cli-source subdirectory
-      const configPath = join(tempSourceDir, "cli-source", "repomirror.yaml");
+      const configPath = join(tempSourceDir, "cli-source", "simonsays.yaml");
       const configContent = await fs.readFile(configPath, "utf-8");
       const yaml = await import("yaml");
       const config = yaml.parse(configContent);
@@ -918,7 +918,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       
       const yaml = await import("yaml");
       const configContent = yaml.stringify(existingConfig);
-      await fs.writeFile(join(tempSourceDir, "repomirror.yaml"), configContent, "utf-8");
+      await fs.writeFile(join(tempSourceDir, "simonsays.yaml"), configContent, "utf-8");
 
       // CLI overrides part of the config
       const cliOptions = {
@@ -940,7 +940,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
 
       // Verify final config has CLI overrides
       // Config gets saved to the final sourceRepo location
-      const finalConfigContent = await fs.readFile(join(tempSourceDir, "existing-source", "repomirror.yaml"), "utf-8");
+      const finalConfigContent = await fs.readFile(join(tempSourceDir, "existing-source", "simonsays.yaml"), "utf-8");
       const finalConfig = yaml.parse(finalConfigContent);
       
       expect(finalConfig.sourceRepo).toBe("./existing-source"); // From existing config (no CLI override)
@@ -1005,7 +1005,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       await init();
 
       // Should successfully create files with the result
-      const promptContent = await fs.readFile(join(tempSourceDir, ".repomirror", "prompt.md"), "utf8");
+      const promptContent = await fs.readFile(join(tempSourceDir, ".simonsays", "prompt.md"), "utf8");
       expect(promptContent).toBe(mockTransformationPrompt);
     });
 
@@ -1093,7 +1093,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       await init();
 
       // Should handle partial responses gracefully and use the valid result
-      const promptContent = await fs.readFile(join(tempSourceDir, ".repomirror", "prompt.md"), "utf8");
+      const promptContent = await fs.readFile(join(tempSourceDir, ".simonsays", "prompt.md"), "utf8");
       expect(promptContent).toBe(mockTransformationPrompt);
     });
   });
@@ -1129,7 +1129,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       await init();
 
       // Check sync.sh contains the absolute path
-      const syncContent = await fs.readFile(join(tempSourceDir, ".repomirror", "sync.sh"), "utf8");
+      const syncContent = await fs.readFile(join(tempSourceDir, ".simonsays", "sync.sh"), "utf8");
       expect(syncContent).toContain(`--add-dir ${tempTargetDir}`);
     });
 
@@ -1148,7 +1148,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
 
       // Check that paths are preserved as entered in the config
       // Config should be saved in the src/../src/./ subdirectory
-      const configPath = join(tempSourceDir, "src/../src/./", "repomirror.yaml");
+      const configPath = join(tempSourceDir, "src/../src/./", "simonsays.yaml");
       const configContent = await fs.readFile(configPath, "utf-8");
       const yaml = await import("yaml");
       const config = yaml.parse(configContent);
@@ -1171,7 +1171,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
 
         // Check sync.sh properly handles the path with spaces
         // Files should be in the "source with spaces" subdirectory
-        const syncContent = await fs.readFile(join(tempSourceDir, "source with spaces", ".repomirror", "sync.sh"), "utf8");
+        const syncContent = await fs.readFile(join(tempSourceDir, "source with spaces", ".simonsays", "sync.sh"), "utf8");
         expect(syncContent).toContain(`--add-dir ${tempDirWithSpaces}`);
       } finally {
         await cleanupTempDir(tempDirWithSpaces);
@@ -1208,7 +1208,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
 
         // Should handle long paths without issue
         // Config should be saved in the nested subdirectory
-        const configPath = join(tempSourceDir, "." + "/nested".repeat(20), "repomirror.yaml");
+        const configPath = join(tempSourceDir, "." + "/nested".repeat(20), "simonsays.yaml");
         const configContent = await fs.readFile(configPath, "utf-8");
         const yaml = await import("yaml");
         const config = yaml.parse(configContent);
@@ -1248,8 +1248,8 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
     it("should create scripts with exact file permissions", async () => {
       await init();
 
-      const syncPath = join(tempSourceDir, ".repomirror", "sync.sh");
-      const ralphPath = join(tempSourceDir, ".repomirror", "ralph.sh");
+      const syncPath = join(tempSourceDir, ".simonsays", "sync.sh");
+      const ralphPath = join(tempSourceDir, ".simonsays", "ralph.sh");
       
       const syncStats = await fs.stat(syncPath);
       const ralphStats = await fs.stat(ralphPath);
@@ -1266,7 +1266,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
     it("should generate sync.sh with proper bash escaping", async () => {
       await init();
 
-      const syncContent = await fs.readFile(join(tempSourceDir, ".repomirror", "sync.sh"), "utf8");
+      const syncContent = await fs.readFile(join(tempSourceDir, ".simonsays", "sync.sh"), "utf8");
       
       // Check shebang
       expect(syncContent.startsWith("#!/bin/bash")).toBe(true);
@@ -1275,24 +1275,24 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
       expect(syncContent).toContain(" | \\");
       
       // Check command structure
-      expect(syncContent).toContain("cat .repomirror/prompt.md");
+      expect(syncContent).toContain("cat .simonsays/prompt.md");
       expect(syncContent).toContain("claude -p --output-format=stream-json");
       expect(syncContent).toContain("--verbose --dangerously-skip-permissions");
-      expect(syncContent).toContain("tee -a .repomirror/claude_output.jsonl");
-      expect(syncContent).toContain("npx repomirror visualize --debug");
+      expect(syncContent).toContain("tee -a .simonsays/claude_output.jsonl");
+      expect(syncContent).toContain("npx simonsays visualize --debug");
     });
 
     it("should generate ralph.sh with proper loop structure", async () => {
       await init();
 
-      const ralphContent = await fs.readFile(join(tempSourceDir, ".repomirror", "ralph.sh"), "utf8");
+      const ralphContent = await fs.readFile(join(tempSourceDir, ".simonsays", "ralph.sh"), "utf8");
       
       // Check shebang
       expect(ralphContent.startsWith("#!/bin/bash")).toBe(true);
       
       // Check loop structure
       expect(ralphContent).toContain("while :; do");
-      expect(ralphContent).toContain("./.repomirror/sync.sh");
+      expect(ralphContent).toContain("./.simonsays/sync.sh");
       expect(ralphContent).toContain("echo -e \"===SLEEP===\\n===SLEEP===\\n\"; echo 'looping';");
       expect(ralphContent).toContain("sleep 10;");
       expect(ralphContent).toContain("done");
@@ -1320,7 +1320,7 @@ Use the [TARGET_PATH]/agent/ directory as a scratchpad.`;
     it("should create gitignore with correct content and no extra whitespace", async () => {
       await init();
 
-      const gitignoreContent = await fs.readFile(join(tempSourceDir, ".repomirror", ".gitignore"), "utf8");
+      const gitignoreContent = await fs.readFile(join(tempSourceDir, ".simonsays", ".gitignore"), "utf8");
       
       // Check exact content
       expect(gitignoreContent).toBe("claude_output.jsonl\n");

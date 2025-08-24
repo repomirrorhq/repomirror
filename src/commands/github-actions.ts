@@ -20,8 +20,8 @@ on:
   push:
     branches: [ main ]
     paths:
-      - '.repomirror/**'
-      - 'repomirror.yaml'
+      - '.simonsays/**'
+      - 'simonsays.yaml'
 
 jobs:
   sync:
@@ -64,7 +64,7 @@ jobs:
         SKIP_CLAUDE_TEST: true # Skip interactive Claude test in CI
       run: |
         # Run the sync once
-        npx repomirror sync
+        npx simonsays sync
     
     - name: Push changes to target
       if: {AUTO_PUSH}
@@ -85,13 +85,13 @@ jobs:
 export async function githubActions(options?: GitHubActionsOptions): Promise<void> {
   console.log(chalk.cyan("Setting up GitHub Actions workflow for RepoMirror\n"));
 
-  // Check if repomirror.yaml exists
-  const configPath = join(process.cwd(), "repomirror.yaml");
+  // Check if simonsays.yaml exists
+  const configPath = join(process.cwd(), "simonsays.yaml");
   try {
     await fs.access(configPath);
   } catch {
-    console.error(chalk.red("Error: repomirror.yaml not found"));
-    console.log(chalk.yellow("Please run 'npx repomirror init' first"));
+    console.error(chalk.red("Error: simonsays.yaml not found"));
+    console.log(chalk.yellow("Please run 'npx simonsays init' first"));
     process.exit(1);
   }
 
@@ -106,7 +106,7 @@ export async function githubActions(options?: GitHubActionsOptions): Promise<voi
       type: "input",
       name: "workflowName",
       message: "Workflow file name:",
-      default: options?.workflowName || "repomirror-sync.yml",
+      default: options?.workflowName || "simonsays-sync.yml",
       validate: (input) => {
         if (!input.endsWith(".yml") && !input.endsWith(".yaml")) {
           return "Workflow file must end with .yml or .yaml";

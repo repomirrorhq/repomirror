@@ -44,7 +44,7 @@ async function loadExistingConfig(sourceRepo?: string): Promise<Partial<RepoMirr
     const baseDir = sourceRepo && sourceRepo !== "./" 
       ? resolve(process.cwd(), sourceRepo) 
       : process.cwd();
-    const configPath = join(baseDir, "repomirror.yaml");
+    const configPath = join(baseDir, "simonsays.yaml");
     const configContent = await fs.readFile(configPath, "utf-8");
     return yaml.parse(configContent) as RepoMirrorConfig;
   } catch {
@@ -59,7 +59,7 @@ async function saveConfig(config: RepoMirrorConfig, sourceRepo?: string): Promis
     : process.cwd();
   // Ensure the directory exists before writing the config
   await fs.mkdir(baseDir, { recursive: true });
-  const configPath = join(baseDir, "repomirror.yaml");
+  const configPath = join(baseDir, "simonsays.yaml");
   const configContent = yaml.stringify(config);
   await fs.writeFile(configPath, configContent, "utf-8");
 }
@@ -74,7 +74,7 @@ export async function init(cliOptions?: Partial<InitOptions>): Promise<void> {
   const existingConfig = await loadExistingConfig(sourceRepoPath);
   if (existingConfig) {
     console.log(
-      chalk.yellow("Found existing repomirror.yaml, using as defaults\n"),
+      chalk.yellow("Found existing simonsays.yaml, using as defaults\n"),
     );
   }
 
@@ -128,9 +128,9 @@ export async function init(cliOptions?: Partial<InitOptions>): Promise<void> {
       answers.transformationInstructions,
   };
 
-  // Save configuration to repomirror.yaml in source directory
+  // Save configuration to simonsays.yaml in source directory
   await saveConfig(finalConfig, finalConfig.sourceRepo);
-  console.log(chalk.green("\n✅ Saved configuration to repomirror.yaml"));
+  console.log(chalk.green("\n✅ Saved configuration to simonsays.yaml"));
 
   // Perform preflight checks
   await performPreflightChecks(finalConfig.targetRepo);
@@ -147,24 +147,24 @@ export async function init(cliOptions?: Partial<InitOptions>): Promise<void> {
 
     console.log(chalk.green("✔ Generated transformation prompt"));
 
-    // Create .repomirror directory and files
-    await createRepoMirrorFiles(
+    // Create .simonsays directory and files
+    await createSimonSaysFiles(
       finalConfig.sourceRepo,
       finalConfig.targetRepo,
       optimizedPrompt,
     );
 
-    console.log(chalk.green("\n✅ repomirror initialized successfully!"));
+    console.log(chalk.green("\n✅ simonsays initialized successfully!"));
     console.log(chalk.cyan("\nNext steps:"));
     console.log(
       chalk.white(
-        "run `npx repomirror sync` - this will run the sync.sh script once",
+        "run `npx simonsays sync` - this will run the sync.sh script once",
       ),
     );
     console.log("");
     console.log(
       chalk.white(
-        "run `npx repomirror sync-forever` - this will run the ralph.sh script, working forever to implement all the changes",
+        "run `npx simonsays sync-forever` - this will run the ralph.sh script, working forever to implement all the changes",
       ),
     );
     console.log("");
@@ -174,10 +174,10 @@ export async function init(cliOptions?: Partial<InitOptions>): Promise<void> {
       ),
     );
     console.log("");
-    console.log(chalk.white("- .repomirror/prompt.md # prompt"));
-    console.log(chalk.white("- .repomirror/sync.sh"));
-    console.log(chalk.white("- .repomirror/ralph.sh"));
-    console.log(chalk.white("- .repomirror/.gitignore"));
+    console.log(chalk.white("- .simonsays/prompt.md # prompt"));
+    console.log(chalk.white("- .simonsays/sync.sh"));
+    console.log(chalk.white("- .simonsays/ralph.sh"));
+    console.log(chalk.white("- .simonsays/.gitignore"));
   } catch (error) {
     console.log(chalk.red("✖ Failed to generate transformation prompt"));
     console.error(
@@ -434,7 +434,7 @@ You should follow the format EXACTLY, filling in information based on what you l
     .replace(/\[TARGET_PATH\]/g, targetRepo);
 }
 
-async function createRepoMirrorFiles(
+async function createSimonSaysFiles(
   sourceRepo: string,
   targetRepo: string,
   optimizedPrompt: string,
@@ -443,40 +443,40 @@ async function createRepoMirrorFiles(
   const sourceDir = sourceRepo && sourceRepo !== "./" 
     ? resolve(process.cwd(), sourceRepo) 
     : process.cwd();
-  const repoMirrorDir = join(sourceDir, ".repomirror");
+  const simonSaysDir = join(sourceDir, ".simonsays");
 
-  // Create .repomirror directory
-  await fs.mkdir(repoMirrorDir, { recursive: true });
+  // Create .simonsays directory
+  await fs.mkdir(simonSaysDir, { recursive: true });
 
   // Create prompt.md
-  await fs.writeFile(join(repoMirrorDir, "prompt.md"), optimizedPrompt);
+  await fs.writeFile(join(simonSaysDir, "prompt.md"), optimizedPrompt);
 
   // Create sync.sh
   const syncScript = `#!/bin/bash
-cat .repomirror/prompt.md | \\
+cat .simonsays/prompt.md | \\
         claude -p --output-format=stream-json --verbose --dangerously-skip-permissions --add-dir ${targetRepo} | \\
-        tee -a .repomirror/claude_output.jsonl | \\
-        npx repomirror visualize --debug;`;
+        tee -a .simonsays/claude_output.jsonl | \\
+        npx simonsays visualize --debug;`;
 
-  await fs.writeFile(join(repoMirrorDir, "sync.sh"), syncScript, {
+  await fs.writeFile(join(simonSaysDir, "sync.sh"), syncScript, {
     mode: 0o755,
   });
 
   // Create ralph.sh
   const ralphScript = `#!/bin/bash
 while :; do
-  ./.repomirror/sync.sh
+  ./.simonsays/sync.sh
   echo -e "===SLEEP===\\n===SLEEP===\\n"; echo 'looping';
   sleep 10;
 done`;
 
-  await fs.writeFile(join(repoMirrorDir, "ralph.sh"), ralphScript, {
+  await fs.writeFile(join(simonSaysDir, "ralph.sh"), ralphScript, {
     mode: 0o755,
   });
 
   // Create .gitignore
   await fs.writeFile(
-    join(repoMirrorDir, ".gitignore"),
+    join(simonSaysDir, ".gitignore"),
     "claude_output.jsonl\n",
   );
 }

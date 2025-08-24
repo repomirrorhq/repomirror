@@ -32,7 +32,7 @@ interface RepoMirrorConfig {
 
 async function loadConfig(): Promise<RepoMirrorConfig | null> {
   try {
-    const configPath = join(process.cwd(), "repomirror.yaml");
+    const configPath = join(process.cwd(), "simonsays.yaml");
     const configContent = await fs.readFile(configPath, "utf-8");
     return yaml.parse(configContent) as RepoMirrorConfig;
   } catch {
@@ -76,12 +76,12 @@ async function performAutoPush(config: RepoMirrorConfig, cliAutoPush: boolean): 
     // Log the error but don't break the sync workflow
     console.log(chalk.yellow("⚠️  Auto-push failed, but sync completed successfully:"));
     console.log(chalk.red(`   ${error instanceof Error ? error.message : String(error)}`));
-    console.log(chalk.gray("   You can manually push using: npx repomirror push"));
+    console.log(chalk.gray("   You can manually push using: npx simonsays push"));
   }
 }
 
 export async function sync(options?: { autoPush?: boolean }): Promise<void> {
-  const syncScript = join(process.cwd(), ".repomirror", "sync.sh");
+  const syncScript = join(process.cwd(), ".simonsays", "sync.sh");
 
   try {
     // Check if sync.sh exists
@@ -89,7 +89,7 @@ export async function sync(options?: { autoPush?: boolean }): Promise<void> {
   } catch {
     console.error(
       chalk.red(
-        "Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.",
+        "Error: .simonsays/sync.sh not found. Run 'npx simonsays init' first.",
       ),
     );
     process.exit(1);

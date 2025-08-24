@@ -135,7 +135,7 @@ describe("sync-one command", () => {
     it("should behave identically to sync command for successful execution", async () => {
       // Create a real sync environment to verify behavior is consistent
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": `#!/bin/bash
 echo "Test sync execution"`,
         },
@@ -347,7 +347,7 @@ echo "Test sync execution"`,
     it("should let sync handle all console output on error", async () => {
       // Mock sync to produce error output before throwing
       mockSync.mockImplementation(async () => {
-        console.error("Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.");
+        console.error("Error: .simonsays/sync.sh not found. Run 'npx simonsays init' first.");
         throw new Error("Process exit called with code 1");
       });
 
@@ -355,7 +355,7 @@ echo "Test sync execution"`,
 
       // Verify sync was called and produced error output
       expect(mockSync).toHaveBeenCalledTimes(1);
-      expect(consoleMock.error).toHaveBeenCalledWith("Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.");
+      expect(consoleMock.error).toHaveBeenCalledWith("Error: .simonsays/sync.sh not found. Run 'npx simonsays init' first.");
     });
 
     it("should preserve the exact console output from sync", async () => {

@@ -49,14 +49,14 @@ describe("sync command", () => {
 
   describe("successful execution", () => {
     it("should execute sync.sh successfully when script exists", async () => {
-      // Create .repomirror directory and sync.sh script
+      // Create .simonsays directory and sync.sh script
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": `#!/bin/bash
-cat .repomirror/prompt.md | \\
+cat .simonsays/prompt.md | \\
         claude -p --output-format=stream-json --verbose --dangerously-skip-permissions --add-dir ../target | \\
-        tee -a .repomirror/claude_output.jsonl | \\
-        npx repomirror visualize --debug;`,
+        tee -a .simonsays/claude_output.jsonl | \\
+        npx simonsays visualize --debug;`,
         },
       });
 
@@ -71,7 +71,7 @@ cat .repomirror/prompt.md | \\
       await sync();
 
       // Verify execa was called with correct parameters
-      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "sync.sh")], {
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".simonsays", "sync.sh")], {
         stdio: "inherit",
         cwd: tempDir,
       });
@@ -85,9 +85,9 @@ cat .repomirror/prompt.md | \\
     });
 
     it("should use correct working directory and script path", async () => {
-      // Create .repomirror directory and sync.sh script
+      // Create .simonsays directory and sync.sh script
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'test sync'",
         },
       });
@@ -101,7 +101,7 @@ cat .repomirror/prompt.md | \\
 
       await sync();
 
-      const expectedScriptPath = join(tempDir, ".repomirror", "sync.sh");
+      const expectedScriptPath = join(tempDir, ".simonsays", "sync.sh");
 
       // Verify execa was called with absolute path to sync.sh
       expect(mockExeca).toHaveBeenCalledWith("bash", [expectedScriptPath], {
@@ -111,9 +111,9 @@ cat .repomirror/prompt.md | \\
     });
 
     it("should inherit stdio for interactive output", async () => {
-      // Create .repomirror directory and sync.sh script
+      // Create .simonsays directory and sync.sh script
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'interactive output'",
         },
       });
@@ -129,7 +129,7 @@ cat .repomirror/prompt.md | \\
       // Verify stdio: "inherit" was passed to execa
       expect(mockExeca).toHaveBeenCalledWith(
         "bash",
-        [join(tempDir, ".repomirror", "sync.sh")],
+        [join(tempDir, ".simonsays", "sync.sh")],
         expect.objectContaining({
           stdio: "inherit",
         })
@@ -138,14 +138,14 @@ cat .repomirror/prompt.md | \\
   });
 
   describe("error cases", () => {
-    it("should exit with error when .repomirror/sync.sh does not exist", async () => {
+    it("should exit with error when .simonsays/sync.sh does not exist", async () => {
       // Don't create the sync.sh script
 
       await expect(sync()).rejects.toThrow("Process exit called with code 1");
 
       // Verify error message
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.")
+        expect.stringContaining("Error: .simonsays/sync.sh not found. Run 'npx simonsays init' first.")
       );
 
       // Verify process.exit was called with code 1
@@ -155,14 +155,14 @@ cat .repomirror/prompt.md | \\
       expect(mockExeca).not.toHaveBeenCalled();
     });
 
-    it("should exit with error when .repomirror directory does not exist", async () => {
-      // Don't create the .repomirror directory at all
+    it("should exit with error when .simonsays directory does not exist", async () => {
+      // Don't create the .simonsays directory at all
 
       await expect(sync()).rejects.toThrow("Process exit called with code 1");
 
       // Verify error message
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.")
+        expect.stringContaining("Error: .simonsays/sync.sh not found. Run 'npx simonsays init' first.")
       );
 
       // Verify process.exit was called with code 1
@@ -173,9 +173,9 @@ cat .repomirror/prompt.md | \\
     });
 
     it("should handle script execution errors gracefully", async () => {
-      // Create .repomirror directory and sync.sh script
+      // Create .simonsays directory and sync.sh script
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\nexit 1",
         },
       });
@@ -200,9 +200,9 @@ cat .repomirror/prompt.md | \\
     });
 
     it("should handle non-Error exceptions in script execution", async () => {
-      // Create .repomirror directory and sync.sh script
+      // Create .simonsays directory and sync.sh script
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'failing'",
         },
       });
@@ -224,9 +224,9 @@ cat .repomirror/prompt.md | \\
 
   describe("console output verification", () => {
     beforeEach(async () => {
-      // Create .repomirror directory and sync.sh script for all output tests
+      // Create .simonsays directory and sync.sh script for all output tests
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'sync output'",
         },
       });
@@ -264,13 +264,13 @@ cat .repomirror/prompt.md | \\
 
     it("should show red colored error message when sync.sh is missing", async () => {
       // Remove the sync.sh script
-      await fs.rm(join(tempDir, ".repomirror", "sync.sh"));
+      await fs.rm(join(tempDir, ".simonsays", "sync.sh"));
 
       await expect(sync()).rejects.toThrow("Process exit called with code 1");
 
       // Check that the missing file error message was logged
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.")
+        expect.stringContaining("Error: .simonsays/sync.sh not found. Run 'npx simonsays init' first.")
       );
     });
   });
@@ -281,7 +281,7 @@ cat .repomirror/prompt.md | \\
 
       // Create the script so access check passes
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'test'",
         },
       });
@@ -291,7 +291,7 @@ cat .repomirror/prompt.md | \\
       await sync();
 
       // Verify fs.access was called with the correct path
-      expect(fsAccessSpy).toHaveBeenCalledWith(join(tempDir, ".repomirror", "sync.sh"));
+      expect(fsAccessSpy).toHaveBeenCalledWith(join(tempDir, ".simonsays", "sync.sh"));
 
       fsAccessSpy.mockRestore();
     });
@@ -304,7 +304,7 @@ cat .repomirror/prompt.md | \\
 
       // Verify the error message still shows file not found (since we catch all access errors)
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.")
+        expect.stringContaining("Error: .simonsays/sync.sh not found. Run 'npx simonsays init' first.")
       );
 
       fsAccessSpy.mockRestore();
@@ -314,7 +314,7 @@ cat .repomirror/prompt.md | \\
   describe("shell script execution with different exit codes", () => {
     it("should handle script that exits with code 2", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\nexit 2",
         },
       });
@@ -336,7 +336,7 @@ cat .repomirror/prompt.md | \\
 
     it("should handle script that exits with code 127 (command not found)", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\nnonexistent_command",
         },
       });
@@ -355,7 +355,7 @@ cat .repomirror/prompt.md | \\
 
     it("should handle script that succeeds with non-zero but success exit code", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'success with warnings'\nexit 0",
         },
       });
@@ -377,7 +377,7 @@ cat .repomirror/prompt.md | \\
   describe("stdout and stderr capture handling", () => {
     it("should handle scripts that output to stdout", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'Processing files...'\necho 'Sync complete'",
         },
       });
@@ -392,7 +392,7 @@ cat .repomirror/prompt.md | \\
       await sync();
 
       // Verify execa was called with stdio: 'inherit' which means output goes directly to console
-      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "sync.sh")], {
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".simonsays", "sync.sh")], {
         stdio: "inherit",
         cwd: tempDir,
       });
@@ -401,7 +401,7 @@ cat .repomirror/prompt.md | \\
 
     it("should handle scripts that output to stderr", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'warning message' >&2\nexit 0",
         },
       });
@@ -414,7 +414,7 @@ cat .repomirror/prompt.md | \\
 
       await sync();
 
-      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "sync.sh")], {
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".simonsays", "sync.sh")], {
         stdio: "inherit",
         cwd: tempDir,
       });
@@ -423,7 +423,7 @@ cat .repomirror/prompt.md | \\
 
     it("should handle scripts with mixed stdout and stderr output", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'Starting sync'\necho 'warning' >&2\necho 'Finished'",
         },
       });
@@ -444,7 +444,7 @@ cat .repomirror/prompt.md | \\
   describe("permission and execution error handling", () => {
     it("should handle permission denied when executing script", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'test'",
         },
       });
@@ -464,7 +464,7 @@ cat .repomirror/prompt.md | \\
 
     it("should handle bash command not found error", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'test'",
         },
       });
@@ -483,7 +483,7 @@ cat .repomirror/prompt.md | \\
 
     it("should handle file system errors during script execution", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'test'",
         },
       });
@@ -507,7 +507,7 @@ cat .repomirror/prompt.md | \\
       processMock.cwd.mockReturnValue(originalCwd);
 
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\ncd / && echo 'changed directory'",
         },
       });
@@ -517,7 +517,7 @@ cat .repomirror/prompt.md | \\
       await sync();
 
       // Verify that the working directory is preserved in the execa call
-      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "sync.sh")], {
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".simonsays", "sync.sh")], {
         stdio: "inherit",
         cwd: originalCwd,
       });
@@ -528,7 +528,7 @@ cat .repomirror/prompt.md | \\
 
     it("should handle scripts that change directory internally", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": `#!/bin/bash
 cd subdir
 echo "Working in $(pwd)"
@@ -547,7 +547,7 @@ echo "Back to $(pwd)"`,
       await sync();
 
       expect(consoleMock.log).toHaveBeenCalledWith(expect.stringContaining("Sync completed successfully"));
-      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "sync.sh")], {
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".simonsays", "sync.sh")], {
         stdio: "inherit",
         cwd: tempDir,
       });
@@ -560,7 +560,7 @@ echo "Back to $(pwd)"`,
       
       // Create script in the nested directory
       await createMockFileStructure(nestedDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'nested sync'",
         },
       });
@@ -575,7 +575,7 @@ echo "Back to $(pwd)"`,
       // Should use the nested directory path
       expect(mockExeca).toHaveBeenCalledWith(
         "bash", 
-        [join(nestedDir, ".repomirror", "sync.sh")], 
+        [join(nestedDir, ".simonsays", "sync.sh")], 
         {
           stdio: "inherit",
           cwd: nestedDir,
@@ -589,7 +589,7 @@ echo "Back to $(pwd)"`,
       const fsAccessSpy = vi.spyOn(fs, "access");
       
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'test'",
         },
       });
@@ -599,7 +599,7 @@ echo "Back to $(pwd)"`,
       await sync();
 
       // Verify fs.access was called to check file existence
-      expect(fsAccessSpy).toHaveBeenCalledWith(join(tempDir, ".repomirror", "sync.sh"));
+      expect(fsAccessSpy).toHaveBeenCalledWith(join(tempDir, ".simonsays", "sync.sh"));
       
       fsAccessSpy.mockRestore();
     });
@@ -613,7 +613,7 @@ echo "Back to $(pwd)"`,
       await expect(sync()).rejects.toThrow("Process exit called with code 1");
 
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.")
+        expect.stringContaining("Error: .simonsays/sync.sh not found. Run 'npx simonsays init' first.")
       );
       expect(mockExeca).not.toHaveBeenCalled();
       
@@ -621,13 +621,13 @@ echo "Back to $(pwd)"`,
     });
 
     it("should handle fs.access throwing ENOTDIR error", async () => {
-      // Create a file where the .repomirror directory should be
-      await fs.writeFile(join(tempDir, ".repomirror"), "not a directory");
+      // Create a file where the .simonsays directory should be
+      await fs.writeFile(join(tempDir, ".simonsays"), "not a directory");
 
       await expect(sync()).rejects.toThrow("Process exit called with code 1");
 
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.")
+        expect.stringContaining("Error: .simonsays/sync.sh not found. Run 'npx simonsays init' first.")
       );
       expect(mockExeca).not.toHaveBeenCalled();
     });
@@ -641,7 +641,7 @@ echo "Back to $(pwd)"`,
       await expect(sync()).rejects.toThrow("Process exit called with code 1");
 
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.")
+        expect.stringContaining("Error: .simonsays/sync.sh not found. Run 'npx simonsays init' first.")
       );
       expect(mockExeca).not.toHaveBeenCalled();
       
@@ -652,7 +652,7 @@ echo "Back to $(pwd)"`,
   describe("edge cases", () => {
     it("should handle empty script content", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "",
         },
       });
@@ -671,10 +671,10 @@ echo "Back to $(pwd)"`,
 set -euo pipefail
 
 # Complex sync script with pipes and redirects
-cat .repomirror/prompt.md | \\
+cat .simonsays/prompt.md | \\
   claude -p --output-format=stream-json --verbose --dangerously-skip-permissions --add-dir ../target | \\
-  tee -a .repomirror/claude_output.jsonl | \\
-  npx repomirror visualize --debug
+  tee -a .simonsays/claude_output.jsonl | \\
+  npx simonsays visualize --debug
 
 if [ $? -eq 0 ]; then
   echo "Sync successful"
@@ -684,7 +684,7 @@ else
 fi`;
 
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": complexScript,
         },
       });
@@ -694,7 +694,7 @@ fi`;
       await sync();
 
       // Should execute the complex script successfully
-      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "sync.sh")], {
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".simonsays", "sync.sh")], {
         stdio: "inherit",
         cwd: tempDir,
       });
@@ -708,9 +708,9 @@ fi`;
       // Mock cwd to return subdirectory
       processMock.cwd.mockReturnValue(subdirPath);
 
-      // Create script in subdirectory's .repomirror folder
+      // Create script in subdirectory's .simonsays folder
       await createMockFileStructure(subdirPath, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'subdir sync'",
         },
       });
@@ -722,7 +722,7 @@ fi`;
       // Should use the subdirectory as working directory
       expect(mockExeca).toHaveBeenCalledWith(
         "bash",
-        [join(subdirPath, ".repomirror", "sync.sh")],
+        [join(subdirPath, ".simonsays", "sync.sh")],
         expect.objectContaining({
           cwd: subdirPath,
         })
@@ -739,7 +739,7 @@ fi`;
       ].join("\n");
 
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": largeScript,
         },
       });
@@ -748,7 +748,7 @@ fi`;
 
       await sync();
 
-      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "sync.sh")], {
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".simonsays", "sync.sh")], {
         stdio: "inherit",
         cwd: tempDir,
       });
@@ -763,7 +763,7 @@ fi`;
       processMock.cwd.mockReturnValue(specialDir);
 
       await createMockFileStructure(specialDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'special path sync'",
         },
       });
@@ -774,7 +774,7 @@ fi`;
 
       expect(mockExeca).toHaveBeenCalledWith(
         "bash", 
-        [join(specialDir, ".repomirror", "sync.sh")], 
+        [join(specialDir, ".simonsays", "sync.sh")], 
         {
           stdio: "inherit",
           cwd: specialDir,
@@ -784,7 +784,7 @@ fi`;
 
     it("should handle script execution timeout scenarios", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\nsleep 300",
         },
       });
@@ -804,7 +804,7 @@ fi`;
 
     it("should handle scripts with binary output", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\nprintf '\\x00\\x01\\x02\\x03'",
         },
       });
@@ -826,7 +826,7 @@ fi`;
   describe("process and signal handling", () => {
     it("should preserve working directory context", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\npwd",
         },
       });
@@ -838,7 +838,7 @@ fi`;
       // Verify that execa is called with the correct working directory
       expect(mockExeca).toHaveBeenCalledWith(
         "bash",
-        [join(tempDir, ".repomirror", "sync.sh")],
+        [join(tempDir, ".simonsays", "sync.sh")],
         expect.objectContaining({
           cwd: tempDir,
         })
@@ -847,7 +847,7 @@ fi`;
 
     it("should handle bash command execution with proper shell", async () => {
       await createMockFileStructure(tempDir, {
-        ".repomirror": {
+        ".simonsays": {
           "sync.sh": "#!/bin/bash\necho 'bash execution'",
         },
       });

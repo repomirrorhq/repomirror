@@ -38,7 +38,7 @@ interface PullOptions {
 
 async function loadConfig(): Promise<RepoMirrorConfig | null> {
   try {
-    const configPath = join(process.cwd(), "repomirror.yaml");
+    const configPath = join(process.cwd(), "simonsays.yaml");
     const configContent = await fs.readFile(configPath, "utf-8");
     return yaml.parse(configContent) as RepoMirrorConfig;
   } catch {
@@ -210,7 +210,7 @@ async function pullSourceChanges(
           ),
         );
         console.log(
-          chalk.gray("• Check the branch name in your repomirror.yaml"),
+          chalk.gray("• Check the branch name in your simonsays.yaml"),
         );
         console.log(
           chalk.gray("• List available branches with: git ls-remote --heads"),
@@ -223,8 +223,8 @@ async function pullSourceChanges(
 }
 
 async function triggerSync(syncAfter: boolean): Promise<void> {
-  const syncScript = join(process.cwd(), ".repomirror", "sync.sh");
-  const ralphScript = join(process.cwd(), ".repomirror", "ralph.sh");
+  const syncScript = join(process.cwd(), ".simonsays", "sync.sh");
+  const ralphScript = join(process.cwd(), ".simonsays", "ralph.sh");
 
   try {
     if (syncAfter) {
@@ -342,7 +342,7 @@ async function performPull(
     if (options.check) {
       console.log(
         chalk.blue(
-          "🔍 Check complete - use 'npx repomirror pull' to apply changes",
+          "🔍 Check complete - use 'npx simonsays pull' to apply changes",
         ),
       );
       return;
@@ -362,7 +362,7 @@ async function performPull(
         console.log(chalk.gray("1. Navigate to source repository"));
         console.log(chalk.gray("2. Resolve conflicts in affected files"));
         console.log(chalk.gray("3. Run: git add . && git commit"));
-        console.log(chalk.gray("4. Re-run: npx repomirror pull"));
+        console.log(chalk.gray("4. Re-run: npx simonsays pull"));
         process.exit(1);
       }
       return;
@@ -377,7 +377,7 @@ async function performPull(
     } else if (!options.sourceOnly) {
       console.log(chalk.blue("\n💡 Source changes pulled successfully"));
       console.log(
-        chalk.gray("Run 'npx repomirror sync' to apply transformations"),
+        chalk.gray("Run 'npx simonsays sync' to apply transformations"),
       );
     }
   } catch (error) {
@@ -390,7 +390,7 @@ export async function pull(options: PullOptions = {}): Promise<void> {
   if (!config) {
     console.error(
       chalk.red(
-        "Error: repomirror.yaml not found. Run 'npx repomirror init' first.",
+        "Error: simonsays.yaml not found. Run 'npx simonsays init' first.",
       ),
     );
     process.exit(1);
