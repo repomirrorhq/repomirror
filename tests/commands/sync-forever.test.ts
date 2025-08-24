@@ -49,12 +49,12 @@ describe("sync-forever command", () => {
 
   describe("successful execution", () => {
     it("should execute ralph.sh successfully when script exists", async () => {
-      // Create .simonsays directory and ralph.sh script
+      // Create .repomirror directory and ralph.sh script
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": `#!/bin/bash
 while :; do
-  ./.simonsays/sync.sh
+  ./.repomirror/sync.sh
   echo -e "===SLEEP===\\n===SLEEP===\\n"; echo 'looping';
   sleep 10;
 done`,
@@ -72,7 +72,7 @@ done`,
       await syncForever();
 
       // Verify execa was called with correct parameters
-      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".simonsays", "ralph.sh")], {
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "ralph.sh")], {
         stdio: "inherit",
         cwd: tempDir,
       });
@@ -86,9 +86,9 @@ done`,
     });
 
     it("should use correct working directory and script path", async () => {
-      // Create .simonsays directory and ralph.sh script
+      // Create .repomirror directory and ralph.sh script
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\necho 'continuous sync'",
         },
       });
@@ -102,7 +102,7 @@ done`,
 
       await syncForever();
 
-      const expectedScriptPath = join(tempDir, ".simonsays", "ralph.sh");
+      const expectedScriptPath = join(tempDir, ".repomirror", "ralph.sh");
 
       // Verify execa was called with absolute path to ralph.sh
       expect(mockExeca).toHaveBeenCalledWith("bash", [expectedScriptPath], {
@@ -112,9 +112,9 @@ done`,
     });
 
     it("should inherit stdio for continuous output monitoring", async () => {
-      // Create .simonsays directory and ralph.sh script
+      // Create .repomirror directory and ralph.sh script
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\nwhile true; do echo 'continuous'; sleep 1; done",
         },
       });
@@ -130,7 +130,7 @@ done`,
       // Verify stdio: "inherit" was passed to execa for real-time output
       expect(mockExeca).toHaveBeenCalledWith(
         "bash",
-        [join(tempDir, ".simonsays", "ralph.sh")],
+        [join(tempDir, ".repomirror", "ralph.sh")],
         expect.objectContaining({
           stdio: "inherit",
         })
@@ -139,14 +139,14 @@ done`,
   });
 
   describe("error cases", () => {
-    it("should exit with error when .simonsays/ralph.sh does not exist", async () => {
+    it("should exit with error when .repomirror/ralph.sh does not exist", async () => {
       // Don't create the ralph.sh script
 
       await expect(syncForever()).rejects.toThrow("Process exit called with code 1");
 
       // Verify error message
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .simonsays/ralph.sh not found. Run 'npx simonsays init' first.")
+        expect.stringContaining("Error: .repomirror/ralph.sh not found. Run 'npx repomirror init' first.")
       );
 
       // Verify process.exit was called with code 1
@@ -156,14 +156,14 @@ done`,
       expect(mockExeca).not.toHaveBeenCalled();
     });
 
-    it("should exit with error when .simonsays directory does not exist", async () => {
-      // Don't create the .simonsays directory at all
+    it("should exit with error when .repomirror directory does not exist", async () => {
+      // Don't create the .repomirror directory at all
 
       await expect(syncForever()).rejects.toThrow("Process exit called with code 1");
 
       // Verify error message
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .simonsays/ralph.sh not found. Run 'npx simonsays init' first.")
+        expect.stringContaining("Error: .repomirror/ralph.sh not found. Run 'npx repomirror init' first.")
       );
 
       // Verify process.exit was called with code 1
@@ -174,9 +174,9 @@ done`,
     });
 
     it("should handle script execution errors gracefully", async () => {
-      // Create .simonsays directory and ralph.sh script
+      // Create .repomirror directory and ralph.sh script
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\nexit 1",
         },
       });
@@ -202,9 +202,9 @@ done`,
     });
 
     it("should handle non-Error exceptions in script execution", async () => {
-      // Create .simonsays directory and ralph.sh script
+      // Create .repomirror directory and ralph.sh script
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\necho 'failing'",
         },
       });
@@ -226,9 +226,9 @@ done`,
 
   describe("SIGINT signal handling", () => {
     it("should handle SIGINT gracefully with user-friendly message", async () => {
-      // Create .simonsays directory and ralph.sh script
+      // Create .repomirror directory and ralph.sh script
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": `#!/bin/bash
 trap 'exit 0' SIGINT
 while true; do
@@ -254,9 +254,9 @@ done`,
     });
 
     it("should distinguish SIGINT from other errors", async () => {
-      // Create .simonsays directory and ralph.sh script
+      // Create .repomirror directory and ralph.sh script
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\necho 'running'",
         },
       });
@@ -280,7 +280,7 @@ done`,
 
     it("should handle Error objects with SIGINT signal correctly", async () => {
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\ntrap 'exit 0' SIGINT; sleep 1000",
         },
       });
@@ -299,7 +299,7 @@ done`,
 
     it("should handle non-Error objects with SIGINT signal", async () => {
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\necho 'test'",
         },
       });
@@ -320,9 +320,9 @@ done`,
 
   describe("console output verification", () => {
     beforeEach(async () => {
-      // Create .simonsays directory and ralph.sh script for all output tests
+      // Create .repomirror directory and ralph.sh script for all output tests
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": `#!/bin/bash
 echo "Continuous sync"
 while true; do sleep 1; done`,
@@ -365,13 +365,13 @@ while true; do sleep 1; done`,
 
     it("should show red colored error message when ralph.sh is missing", async () => {
       // Remove the ralph.sh script
-      await fs.rm(join(tempDir, ".simonsays", "ralph.sh"));
+      await fs.rm(join(tempDir, ".repomirror", "ralph.sh"));
 
       await expect(syncForever()).rejects.toThrow("Process exit called with code 1");
 
       // Check that the missing file error message was logged
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .simonsays/ralph.sh not found. Run 'npx simonsays init' first.")
+        expect.stringContaining("Error: .repomirror/ralph.sh not found. Run 'npx repomirror init' first.")
       );
     });
   });
@@ -382,7 +382,7 @@ while true; do sleep 1; done`,
 
       // Create the script so access check passes
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\necho 'continuous'",
         },
       });
@@ -392,7 +392,7 @@ while true; do sleep 1; done`,
       await syncForever();
 
       // Verify fs.access was called with the correct path
-      expect(fsAccessSpy).toHaveBeenCalledWith(join(tempDir, ".simonsays", "ralph.sh"));
+      expect(fsAccessSpy).toHaveBeenCalledWith(join(tempDir, ".repomirror", "ralph.sh"));
 
       fsAccessSpy.mockRestore();
     });
@@ -405,7 +405,7 @@ while true; do sleep 1; done`,
 
       // Verify the error message still shows file not found (since we catch all access errors)
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .simonsays/ralph.sh not found. Run 'npx simonsays init' first.")
+        expect.stringContaining("Error: .repomirror/ralph.sh not found. Run 'npx repomirror init' first.")
       );
 
       fsAccessSpy.mockRestore();
@@ -415,7 +415,7 @@ while true; do sleep 1; done`,
   describe("continuous execution scenarios", () => {
     it("should handle long-running scripts appropriately", async () => {
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": `#!/bin/bash
 while true; do
   echo "Syncing..."
@@ -429,7 +429,7 @@ done`,
 
       await syncForever();
 
-      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".simonsays", "ralph.sh")], {
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "ralph.sh")], {
         stdio: "inherit",
         cwd: tempDir,
       });
@@ -450,7 +450,7 @@ while :; do
     echo "Starting sync cycle..."
     
     # Run sync
-    if ./.simonsays/sync.sh; then
+    if ./.repomirror/sync.sh; then
         echo "Sync successful"
     else
         echo "Sync failed, continuing anyway..."
@@ -462,7 +462,7 @@ while :; do
 done`;
 
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": complexScript,
         },
       });
@@ -472,7 +472,7 @@ done`;
       await syncForever();
 
       // Should execute the complex script successfully
-      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".simonsays", "ralph.sh")], {
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "ralph.sh")], {
         stdio: "inherit",
         cwd: tempDir,
       });
@@ -480,7 +480,7 @@ done`;
 
     it("should handle empty script content", async () => {
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "",
         },
       });
@@ -497,7 +497,7 @@ done`;
   describe("process and signal handling edge cases", () => {
     it("should preserve working directory context for continuous execution", async () => {
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\npwd; while true; do sleep 1; done",
         },
       });
@@ -509,7 +509,7 @@ done`;
       // Verify that execa is called with the correct working directory
       expect(mockExeca).toHaveBeenCalledWith(
         "bash",
-        [join(tempDir, ".simonsays", "ralph.sh")],
+        [join(tempDir, ".repomirror", "ralph.sh")],
         expect.objectContaining({
           cwd: tempDir,
         })
@@ -518,7 +518,7 @@ done`;
 
     it("should handle bash command execution with proper shell for continuous processes", async () => {
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\necho 'continuous execution'; while true; do sleep 1; done",
         },
       });
@@ -537,7 +537,7 @@ done`;
 
     it("should handle multiple different signal types correctly", async () => {
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\nwhile true; do sleep 1; done",
         },
       });
@@ -569,22 +569,22 @@ done`;
       await expect(syncForever()).rejects.toThrow("Process exit called with code 1");
       
       // Verify fs.access was called to check script existence
-      expect(fsAccessSpy).toHaveBeenCalledWith(join(tempDir, ".simonsays", "ralph.sh"));
+      expect(fsAccessSpy).toHaveBeenCalledWith(join(tempDir, ".repomirror", "ralph.sh"));
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .simonsays/ralph.sh not found.")
+        expect.stringContaining("Error: .repomirror/ralph.sh not found.")
       );
       
       fsAccessSpy.mockRestore();
     });
 
-    it("should handle gracefully when .simonsays directory is missing", async () => {
+    it("should handle gracefully when .repomirror directory is missing", async () => {
       const fsAccessSpy = vi.spyOn(fs, "access");
       
       await expect(syncForever()).rejects.toThrow("Process exit called with code 1");
       
       // Verify the error is caught and handled gracefully
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .simonsays/ralph.sh not found. Run 'npx simonsays init' first.")
+        expect.stringContaining("Error: .repomirror/ralph.sh not found. Run 'npx repomirror init' first.")
       );
       expect(processMock.exit).toHaveBeenCalledWith(1);
       expect(mockExeca).not.toHaveBeenCalled();
@@ -602,7 +602,7 @@ done`;
       
       // Should treat permission errors as "file not found" for user-friendly message
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .simonsays/ralph.sh not found. Run 'npx simonsays init' first.")
+        expect.stringContaining("Error: .repomirror/ralph.sh not found. Run 'npx repomirror init' first.")
       );
       
       fsAccessSpy.mockRestore();
@@ -612,7 +612,7 @@ done`;
       const fsAccessSpy = vi.spyOn(fs, "access");
       
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\necho 'verified and running'",
         },
       });
@@ -622,10 +622,10 @@ done`;
       await syncForever();
       
       // Verify fs.access was called first
-      expect(fsAccessSpy).toHaveBeenCalledWith(join(tempDir, ".simonsays", "ralph.sh"));
+      expect(fsAccessSpy).toHaveBeenCalledWith(join(tempDir, ".repomirror", "ralph.sh"));
       
       // Then execa was called
-      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".simonsays", "ralph.sh")], {
+      expect(mockExeca).toHaveBeenCalledWith("bash", [join(tempDir, ".repomirror", "ralph.sh")], {
         stdio: "inherit",
         cwd: tempDir,
       });
@@ -636,7 +636,7 @@ done`;
     it("should specifically look for ralph.sh not sync.sh", async () => {
       // Create only sync.sh, not ralph.sh
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "sync.sh": "#!/bin/bash\necho 'sync'",
         },
       });
@@ -645,20 +645,20 @@ done`;
 
       // Should specifically complain about ralph.sh being missing
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("Error: .simonsays/ralph.sh not found.")
+        expect.stringContaining("Error: .repomirror/ralph.sh not found.")
       );
     });
 
     it("should execute ralph.sh with appropriate permissions expectations", async () => {
       // Create ralph.sh with executable permissions
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\necho 'ralph running'",
         },
       });
 
       // Make script executable (simulate proper init)
-      const scriptPath = join(tempDir, ".simonsays", "ralph.sh");
+      const scriptPath = join(tempDir, ".repomirror", "ralph.sh");
       const stats = await fs.stat(scriptPath);
       await fs.chmod(scriptPath, stats.mode | 0o111);
 
@@ -675,13 +675,13 @@ done`;
     it("should work with ralph.sh that contains typical continuous sync logic", async () => {
       const typicalRalphScript = `#!/bin/bash
 while :; do
-  ./.simonsays/sync.sh
+  ./.repomirror/sync.sh
   echo -e "===SLEEP===\\n===SLEEP===\\n"; echo 'looping';
   sleep 10;
 done`;
 
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": typicalRalphScript,
         },
       });
@@ -692,7 +692,7 @@ done`;
 
       expect(mockExeca).toHaveBeenCalledWith(
         "bash",
-        [join(tempDir, ".simonsays", "ralph.sh")],
+        [join(tempDir, ".repomirror", "ralph.sh")],
         {
           stdio: "inherit",
           cwd: tempDir,
@@ -711,7 +711,7 @@ echo "Starting continuous sync loop..."
 while true; do
   echo "[$(date)] Running sync cycle"
   
-  if ./.simonsays/sync.sh; then
+  if ./.repomirror/sync.sh; then
     echo "[$(date)] Sync completed successfully"
   else
     echo "[$(date)] Sync failed, will retry in 10 seconds"
@@ -723,7 +723,7 @@ while true; do
 done`;
 
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": continuousLoopScript,
         },
       });
@@ -740,7 +740,7 @@ done`;
       // Verify the continuous script is executed properly
       expect(mockExeca).toHaveBeenCalledWith(
         "bash",
-        [join(tempDir, ".simonsays", "ralph.sh")],
+        [join(tempDir, ".repomirror", "ralph.sh")],
         expect.objectContaining({
           stdio: "inherit",  // This allows the continuous output to be seen
         })
@@ -762,7 +762,7 @@ while true; do
   echo "[Cycle $counter] Running sync..."
   
   # Simulate sync work
-  if ./.simonsays/sync.sh; then
+  if ./.repomirror/sync.sh; then
     echo "[Cycle $counter] Sync completed"
   else
     echo "[Cycle $counter] Sync failed, continuing..."
@@ -774,7 +774,7 @@ while true; do
 done`;
 
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": foreverScript,
         },
       });
@@ -792,7 +792,7 @@ done`;
       // Verify the forever script is properly executed
       expect(mockExeca).toHaveBeenCalledWith(
         "bash",
-        [join(tempDir, ".simonsays", "ralph.sh")],
+        [join(tempDir, ".repomirror", "ralph.sh")],
         expect.objectContaining({
           stdio: "inherit", // Essential for monitoring continuous output
           cwd: tempDir,
@@ -811,7 +811,7 @@ done`;
   describe("enhanced signal handling and process management", () => {
     it("should handle SIGTERM gracefully as a shutdown signal", async () => {
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\ntrap 'exit 0' SIGTERM; while true; do sleep 1; done",
         },
       });
@@ -832,7 +832,7 @@ done`;
 
     it("should properly distinguish SIGINT from other termination signals", async () => {
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\nwhile true; do sleep 1; done",
         },
       });
@@ -868,7 +868,7 @@ done`;
   describe("shell script execution and process management", () => {
     it("should execute ralph.sh with bash shell for proper script interpretation", async () => {
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\nset -euo pipefail\necho 'bash specific features'",
         },
       });
@@ -880,14 +880,14 @@ done`;
       // Verify bash is specifically used as the shell
       expect(mockExeca).toHaveBeenCalledWith(
         "bash", 
-        expect.arrayContaining([join(tempDir, ".simonsays", "ralph.sh")]), 
+        expect.arrayContaining([join(tempDir, ".repomirror", "ralph.sh")]), 
         expect.any(Object)
       );
     });
 
     it("should pass correct execution context to subprocess", async () => {
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\necho \"CWD: $PWD\"",
         },
       });
@@ -898,7 +898,7 @@ done`;
 
       expect(mockExeca).toHaveBeenCalledWith(
         "bash",
-        [join(tempDir, ".simonsays", "ralph.sh")],
+        [join(tempDir, ".repomirror", "ralph.sh")],
         expect.objectContaining({
           stdio: "inherit",    // For real-time output
           cwd: tempDir,        // Correct working directory
@@ -908,7 +908,7 @@ done`;
 
     it("should maintain process inheritance for continuous execution monitoring", async () => {
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": `#!/bin/bash
 while true; do
   echo "[$(date)] Continuous execution..."
@@ -938,7 +938,7 @@ done`,
 
     it("should handle script execution failures with proper error context", async () => {
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\nexit 42",
         },
       });
@@ -958,7 +958,7 @@ done`,
 
     it("should handle permission denied during script execution", async () => {
       await createMockFileStructure(tempDir, {
-        ".simonsays": {
+        ".repomirror": {
           "ralph.sh": "#!/bin/bash\necho 'should not run'",
         },
       });

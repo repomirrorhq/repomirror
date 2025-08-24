@@ -50,7 +50,7 @@ describe("push command", () => {
   });
 
   describe("configuration loading", () => {
-    it("should exit with error when simonsays.yaml not found", async () => {
+    it("should exit with error when repomirror.yaml not found", async () => {
       // Mock file not found
       vi.mocked(fs.readFile).mockRejectedValue(new Error("ENOENT"));
 

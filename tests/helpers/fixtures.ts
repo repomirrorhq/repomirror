@@ -19,14 +19,14 @@ Use the ../target/agent/ directory as a scratchpad for your work. Store long ter
 The original project was mostly tested by manually running the code. When porting, you will need to write end to end and unit tests for the project. But make sure to spend most of your time on the actual porting, not on the testing. A good heuristic is to spend 80% of your time on the actual porting, and 20% on the testing.`;
 
 export const mockSyncScript = `#!/bin/bash
-cat .simonsays/prompt.md | \\
+cat .repomirror/prompt.md | \\
         claude -p --output-format=stream-json --verbose --dangerously-skip-permissions --add-dir ../target | \\
-        tee -a .simonsays/claude_output.jsonl | \\
-        npx simonsays visualize --debug;`;
+        tee -a .repomirror/claude_output.jsonl | \\
+        npx repomirror visualize --debug;`;
 
 export const mockRalphScript = `#!/bin/bash
 while :; do
-  ./.simonsays/sync.sh
+  ./.repomirror/sync.sh
   echo -e "===SLEEP===\\n===SLEEP===\\n"; echo 'looping';
   sleep 10;
 done`;

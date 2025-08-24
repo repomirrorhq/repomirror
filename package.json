@@ -4,7 +4,7 @@
   "description": "Sync and transform repositories using AI agents",
   "main": "dist/index.js",
   "bin": {
-    "simonsays": "dist/cli.js"
+    "repomirror": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc",

@@ -49,7 +49,7 @@ describe("pull command", () => {
   });
 
   describe("basic functionality", () => {
-    it("should exit with error when simonsays.yaml not found", async () => {
+    it("should exit with error when repomirror.yaml not found", async () => {
       vi.mocked(fs.readFile).mockRejectedValue(new Error("ENOENT"));
 
       await expect(() => pull()).rejects.toThrow("process.exit unexpectedly called with \"1\"");

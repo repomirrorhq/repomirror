@@ -15,33 +15,33 @@ import { dispatchSync } from "./commands/dispatch-sync";
 const program = new Command();
 
 program
-  .name("simonsays")
+  .name("repomirror")
   .description("Sync and transform repositories using AI agents")
   .version("0.1.0")
   .addHelpText(
     "after",
     `
 Configuration:
-  simonsays uses a simonsays.yaml file to store configuration.
+  repomirror uses a repomirror.yaml file to store configuration.
   On first run, settings are saved to this file.
   On subsequent runs, the file is used for defaults.
 
   Command-line flags override both yaml defaults and interactive prompts.
 
 Examples:
-  $ npx simonsays init
+  $ npx repomirror init
       Interactive mode with prompts
 
-  $ npx simonsays init --source ./ --target ../myrepo-ts --instructions "convert to typescript"
+  $ npx repomirror init --source ./ --target ../myrepo-ts --instructions "convert to typescript"
       Skip prompts and use provided values
 
-  $ npx simonsays help
+  $ npx repomirror help
       Show this help message`,
   );
 
 program
   .command("init")
-  .description("Initialize simonsays in current directory")
+  .description("Initialize repomirror in current directory")
   .option("-s, --source <path>", "Source repository path")
   .option("-t, --target <path>", "Target repository path")
   .option("-i, --instructions <text>", "Transformation instructions")
@@ -89,10 +89,10 @@ Actions:
   remove <name>                Remove a remote repository
 
 Examples:
-  $ npx simonsays remote add origin https://github.com/user/repo.git
-  $ npx simonsays remote add staging https://github.com/user/staging.git develop
-  $ npx simonsays remote list
-  $ npx simonsays remote remove origin`,
+  $ npx repomirror remote add origin https://github.com/user/repo.git
+  $ npx repomirror remote add staging https://github.com/user/staging.git develop
+  $ npx repomirror remote list
+  $ npx repomirror remote remove origin`,
   )
   .action((action, args) => remote(action, ...args));
 
@@ -107,19 +107,19 @@ program
     "after",
     `
 Examples:
-  $ npx simonsays push
+  $ npx repomirror push
       Push to default remote (origin/main)
 
-  $ npx simonsays push --remote staging
+  $ npx repomirror push --remote staging
       Push to specific remote using its configured branch
 
-  $ npx simonsays push --remote origin --branch feature-branch
+  $ npx repomirror push --remote origin --branch feature-branch
       Push to specific remote and branch
 
-  $ npx simonsays push --all
+  $ npx repomirror push --all
       Push to all configured remotes
 
-  $ npx simonsays push --dry-run
+  $ npx repomirror push --dry-run
       Show what would be pushed without pushing`,
   )
   .action((options) => push(options));
@@ -134,16 +134,16 @@ program
     "after",
     `
 Examples:
-  $ npx simonsays pull
+  $ npx repomirror pull
       Pull source changes and re-sync (if auto_sync is enabled)
 
-  $ npx simonsays pull --source-only
+  $ npx repomirror pull --source-only
       Pull source changes without triggering sync
 
-  $ npx simonsays pull --sync-after
+  $ npx repomirror pull --sync-after
       Pull source changes and run continuous sync
 
-  $ npx simonsays pull --check
+  $ npx repomirror pull --check
       Check for available changes without pulling`,
   )
   .action((options) => pull(options));
@@ -151,7 +151,7 @@ Examples:
 program
   .command("github-actions")
   .description("Generate GitHub Actions workflow for automated syncing")
-  .option("-n, --name <name>", "Workflow file name (default: simonsays-sync.yml)")
+  .option("-n, --name <name>", "Workflow file name (default: repomirror-sync.yml)")
   .option("-s, --schedule <cron>", "Cron schedule for automatic runs")
   .option("--no-auto-push", "Disable automatic pushing to target repo")
   .addHelpText(
@@ -160,17 +160,17 @@ program
 Generates a GitHub Actions workflow file for automated repository syncing.
 
 Examples:
-  $ npx simonsays github-actions
+  $ npx repomirror github-actions
       Interactive setup with prompts
 
-  $ npx simonsays github-actions --schedule "0 */12 * * *"
+  $ npx repomirror github-actions --schedule "0 */12 * * *"
       Run every 12 hours
 
-  $ npx simonsays github-actions --no-auto-push
+  $ npx repomirror github-actions --no-auto-push
       Create workflow without automatic push to target
 
 Notes:
-  - Requires simonsays.yaml to be present
+  - Requires repomirror.yaml to be present
   - Creates workflow in .github/workflows/
   - You'll need to set up CLAUDE_API_KEY secret in GitHub`,
   )

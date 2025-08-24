@@ -32,7 +32,7 @@ interface RepoMirrorConfig {
 
 async function loadConfig(): Promise<RepoMirrorConfig | null> {
   try {
-    const configPath = join(process.cwd(), "simonsays.yaml");
+    const configPath = join(process.cwd(), "repomirror.yaml");
     const configContent = await fs.readFile(configPath, "utf-8");
     return yaml.parse(configContent) as RepoMirrorConfig;
   } catch {
@@ -41,7 +41,7 @@ async function loadConfig(): Promise<RepoMirrorConfig | null> {
 }
 
 async function saveConfig(config: RepoMirrorConfig): Promise<void> {
-  const configPath = join(process.cwd(), "simonsays.yaml");
+  const configPath = join(process.cwd(), "repomirror.yaml");
   const configContent = yaml.stringify(config);
   await fs.writeFile(configPath, configContent, "utf-8");
 }
@@ -86,7 +86,7 @@ export async function remoteAdd(
   if (!config) {
     console.error(
       chalk.red(
-        "Error: simonsays.yaml not found. Run 'npx simonsays init' first.",
+        "Error: repomirror.yaml not found. Run 'npx repomirror init' first.",
       ),
     );
     process.exit(1);
@@ -103,7 +103,7 @@ export async function remoteAdd(
     console.log(chalk.gray(`Current URL: ${config.remotes[name].url}`));
     console.log(
       chalk.gray(
-        "Use 'npx simonsays remote remove <name>' to remove it first",
+        "Use 'npx repomirror remote remove <name>' to remove it first",
       ),
     );
     process.exit(1);
@@ -164,7 +164,7 @@ export async function remoteList(): Promise<void> {
   if (!config) {
     console.error(
       chalk.red(
-        "Error: simonsays.yaml not found. Run 'npx simonsays init' first.",
+        "Error: repomirror.yaml not found. Run 'npx repomirror init' first.",
       ),
     );
     process.exit(1);
@@ -173,7 +173,7 @@ export async function remoteList(): Promise<void> {
   if (!config.remotes || Object.keys(config.remotes).length === 0) {
     console.log(chalk.yellow("No remotes configured"));
     console.log(
-      chalk.gray("Add a remote with: npx simonsays remote add <name> <url>"),
+      chalk.gray("Add a remote with: npx repomirror remote add <name> <url>"),
     );
     return;
   }
@@ -222,7 +222,7 @@ export async function remoteRemove(name: string): Promise<void> {
   if (!config) {
     console.error(
       chalk.red(
-        "Error: simonsays.yaml not found. Run 'npx simonsays init' first.",
+        "Error: repomirror.yaml not found. Run 'npx repomirror init' first.",
       ),
     );
     process.exit(1);
@@ -230,7 +230,7 @@ export async function remoteRemove(name: string): Promise<void> {
 
   if (!config.remotes || !config.remotes[name]) {
     console.error(chalk.red(`Error: Remote '${name}' not found`));
-    console.log(chalk.gray("List remotes with: npx simonsays remote list"));
+    console.log(chalk.gray("List remotes with: npx repomirror remote list"));
     process.exit(1);
   }
 
@@ -262,7 +262,7 @@ export async function remote(action: string, ...args: string[]): Promise<void> {
     case "add":
       if (args.length < 2) {
         console.error(
-          chalk.red("Usage: npx simonsays remote add <name> <url> [branch]"),
+          chalk.red("Usage: npx repomirror remote add <name> <url> [branch]"),
         );
         process.exit(1);
       }
@@ -276,7 +276,7 @@ export async function remote(action: string, ...args: string[]): Promise<void> {
     case "remove":
     case "rm":
       if (args.length < 1) {
-        console.error(chalk.red("Usage: npx simonsays remote remove <name>"));
+        console.error(chalk.red("Usage: npx repomirror remote remove <name>"));
         process.exit(1);
       }
       await remoteRemove(args[0]);

@@ -1,4 +1,4 @@
-# simonsays
+# repomirror
 
 A tool to perform transformations on code repositories with AI. Inspired by [@ghuntley](https://github.com/ghuntley)'s [ralph wiggum](https://ghuntley.com/ralph).
 

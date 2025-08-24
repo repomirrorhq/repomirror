@@ -1,5 +1,20 @@
 # RepoMirror Implementation Plan
 
+## PRIORITY -1: finish rename ✅
+- [x] change simonsays to repomirror everywhere, files, docs, names referenfces, everything ✅
+  - Updated package.json binary name from "simonsays" to "repomirror"
+  - Renamed simonsays.yaml to repomirror.yaml 
+  - Updated CLI name and all help text references throughout src/cli.ts
+  - Changed all ".simonsays" directory references to ".repomirror"
+  - Renamed createSimonSaysFiles function to createRepoMirrorFiles
+  - Updated all configuration file references from "simonsays.yaml" to "repomirror.yaml"
+  - Updated all "npx simonsays" command references to "npx repomirror"
+  - Migrated existing .simonsays directory to .repomirror with proper script updates
+  - Updated all test files to use new naming conventions
+  - Updated README.md and documentation
+  - Removed orphaned test file for non-existent issue-fixer command
+  - All 277 tests passing with TypeScript compilation successful
+
 ## PRIORITY 0: fix critical bugs ✅
 - [x] sync-forever doesn't exit on ctrl+c ✅
   - Fixed signal handling in sync-forever command for both legacy ralph.sh and new approach

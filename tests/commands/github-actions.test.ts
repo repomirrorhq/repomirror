@@ -54,7 +54,7 @@ describe("github-actions command", () => {
 
   describe("successful workflow generation", () => {
     beforeEach(async () => {
-      // Create a mock simonsays.yaml
+      // Create a mock repomirror.yaml
       const config = {
         sourceRepo: "./",
         targetRepo: "../myrepo-transformed",
@@ -62,7 +62,7 @@ describe("github-actions command", () => {
       };
       const yaml = await import("yaml");
       await fs.writeFile(
-        join(tempDir, "simonsays.yaml"),
+        join(tempDir, "repomirror.yaml"),
         yaml.stringify(config),
       );
     });
@@ -151,16 +151,16 @@ describe("github-actions command", () => {
   });
 
   describe("error handling", () => {
-    it("should exit when simonsays.yaml not found", async () => {
+    it("should exit when repomirror.yaml not found", async () => {
       await expect(githubActions()).rejects.toThrow(
         "Process exit called with code 1",
       );
 
       expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining("simonsays.yaml not found"),
+        expect.stringContaining("repomirror.yaml not found"),
       );
       expect(consoleMock.log).toHaveBeenCalledWith(
-        expect.stringContaining("npx simonsays init"),
+        expect.stringContaining("npx repomirror init"),
       );
     });
 
@@ -168,7 +168,7 @@ describe("github-actions command", () => {
       // Create config
       const yaml = await import("yaml");
       await fs.writeFile(
-        join(tempDir, "simonsays.yaml"),
+        join(tempDir, "repomirror.yaml"),
         yaml.stringify({ sourceRepo: "./", targetRepo: "../target" }),
       );
 
@@ -205,7 +205,7 @@ describe("github-actions command", () => {
     beforeEach(async () => {
       const yaml = await import("yaml");
       await fs.writeFile(
-        join(tempDir, "simonsays.yaml"),
+        join(tempDir, "repomirror.yaml"),
         yaml.stringify({
           sourceRepo: "./",
           targetRepo: "../target",
@@ -234,7 +234,7 @@ describe("github-actions command", () => {
       expect(content).toContain("uses: actions/checkout@v3");
       expect(content).toContain("uses: actions/setup-node@v3");
       expect(content).toContain("npm install -g repomirror");
-      expect(content).toContain("npx simonsays sync");
+      expect(content).toContain("npx repomirror sync");
       expect(content).toContain("CLAUDE_API_KEY");
       expect(content).toContain("SKIP_CLAUDE_TEST: true");
     });
@@ -276,7 +276,7 @@ describe("github-actions command", () => {
     beforeEach(async () => {
       const yaml = await import("yaml");
       await fs.writeFile(
-        join(tempDir, "simonsays.yaml"),
+        join(tempDir, "repomirror.yaml"),
         yaml.stringify({
           sourceRepo: "./",
           targetRepo: "../myrepo-transformed",

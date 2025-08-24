@@ -39,7 +39,7 @@ interface PushOptions {
 
 async function loadConfig(): Promise<RepoMirrorConfig | null> {
   try {
-    const configPath = join(process.cwd(), "simonsays.yaml");
+    const configPath = join(process.cwd(), "repomirror.yaml");
     const configContent = await fs.readFile(configPath, "utf-8");
     return yaml.parse(configContent) as RepoMirrorConfig;
   } catch {
@@ -324,7 +324,7 @@ async function performPush(
       );
       console.log(
         chalk.gray(
-          "Use --remote <name> or add a default remote with: npx simonsays remote add",
+          "Use --remote <name> or add a default remote with: npx repomirror remote add",
         ),
       );
       process.exit(1);
@@ -333,7 +333,7 @@ async function performPush(
     if (!config.remotes?.[remoteName]) {
       console.error(chalk.red(`Error: Remote '${remoteName}' not found`));
       console.log(
-        chalk.gray("List configured remotes with: npx simonsays remote list"),
+        chalk.gray("List configured remotes with: npx repomirror remote list"),
       );
       process.exit(1);
     }
@@ -345,7 +345,7 @@ async function performPush(
   if (remotesToPush.length === 0) {
     console.log(chalk.yellow("No remotes configured for push"));
     console.log(
-      chalk.gray("Add a remote with: npx simonsays remote add <name> <url>"),
+      chalk.gray("Add a remote with: npx repomirror remote add <name> <url>"),
     );
     return;
   }
@@ -383,7 +383,7 @@ export async function push(options: PushOptions = {}): Promise<void> {
   if (!config) {
     console.error(
       chalk.red(
-        "Error: simonsays.yaml not found. Run 'npx simonsays init' first.",
+        "Error: repomirror.yaml not found. Run 'npx repomirror init' first.",
       ),
     );
     process.exit(1);
@@ -392,7 +392,7 @@ export async function push(options: PushOptions = {}): Promise<void> {
   if (!config.remotes || Object.keys(config.remotes).length === 0) {
     console.error(chalk.red("Error: No remotes configured"));
     console.log(
-      chalk.gray("Add a remote with: npx simonsays remote add <name> <url>"),
+      chalk.gray("Add a remote with: npx repomirror remote add <name> <url>"),
     );
     process.exit(1);
   }

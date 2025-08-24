@@ -5,8 +5,8 @@ import { promises as fs } from "fs";
 import { sync } from "./sync";
 
 export async function syncForever(options?: { autoPush?: boolean }): Promise<void> {
-  const ralphScript = join(process.cwd(), ".simonsays", "ralph.sh");
-  const syncScript = join(process.cwd(), ".simonsays", "sync.sh");
+  const ralphScript = join(process.cwd(), ".repomirror", "ralph.sh");
+  const syncScript = join(process.cwd(), ".repomirror", "sync.sh");
 
   // Check if scripts exist
   let ralphExists = false;
@@ -30,7 +30,7 @@ export async function syncForever(options?: { autoPush?: boolean }): Promise<voi
   if (!options?.autoPush && !ralphExists) {
     console.error(
       chalk.red(
-        "Error: .simonsays/ralph.sh not found. Run 'npx simonsays init' first.",
+        "Error: .repomirror/ralph.sh not found. Run 'npx repomirror init' first.",
       ),
     );
     process.exit(1);
@@ -42,7 +42,7 @@ export async function syncForever(options?: { autoPush?: boolean }): Promise<voi
     if (!syncExists) {
       console.error(
         chalk.red(
-          "Error: .simonsays/sync.sh not found. Run 'npx simonsays init' first.",
+          "Error: .repomirror/sync.sh not found. Run 'npx repomirror init' first.",
         ),
       );
       process.exit(1);
@@ -104,7 +104,7 @@ export async function syncForever(options?: { autoPush?: boolean }): Promise<voi
     if (!ralphExists) {
       console.error(
         chalk.red(
-          "Error: .simonsays/ralph.sh not found. Run 'npx simonsays init' first.",
+          "Error: .repomirror/ralph.sh not found. Run 'npx repomirror init' first.",
         ),
       );
       process.exit(1);
