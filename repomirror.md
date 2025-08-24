@@ -136,7 +136,7 @@ npx repomirror init \
     --instructions "convert browser use to zig"
 ```
 
-Instructions can be anything like "conver from react to vue" or "change from grpc to rest using OpenAPI spec codegen".
+Instructions can be anything like "convert from react to vue" or "change from grpc to rest using OpenAPI spec codegen".
 
 Its not perfectly architected, and its a little hacky. But it was enough to hack things together, and it's designed similar to Shadcn's "open-box" approach where it generates scripts/prompts that you are welcome to modify after `init` phase. 
 
