@@ -180,8 +180,6 @@ Notes:
     autoPush: options.autoPush,
   }));
 
-<<<<<<< HEAD
-=======
 program
   .command("setup-github-pr-sync")
   .description("Setup GitHub Actions workflow for PR-triggered sync")
@@ -249,47 +247,4 @@ Notes:
     quiet: options.quiet,
   }));
 
-program
-  .command("issue-fixer")
-  .description("Automatically detect and fix transformation issues")
-  .option("-t, --target-only", "Only check target repository without comparing to source")
-  .option("-i, --interactive", "Interactive mode - choose which issues to fix")
-  .option("-c, --category <type>", "Filter issues by category (build, test, lint, type)")
-  .addHelpText(
-    "after",
-    `
-Detects and automatically fixes common issues that occur during repository transformation.
-
-Categories:
-  build    - Build errors and missing dependencies
-  test     - Failing tests
-  lint     - Linting errors and style issues
-  type     - Type checking errors (TypeScript, Python, etc.)
-
-Examples:
-  $ npx repomirror issue-fixer
-      Detect and fix all issues automatically
-
-  $ npx repomirror issue-fixer --interactive
-      Choose which issues to fix interactively
-
-  $ npx repomirror issue-fixer --category build
-      Only fix build-related issues
-
-  $ npx repomirror issue-fixer --target-only
-      Check target repo without source comparison
-
-Notes:
-  - Requires repomirror.yaml to be present
-  - Works with Node/TypeScript, Python, and Go projects
-  - Uses Claude to intelligently fix detected issues
-  - Creates .repomirror/issue-fixer-prompt.md for debugging`,
-  )
-  .action((options) => issueFixer({
-    targetOnly: options.targetOnly,
-    interactive: options.interactive,
-    category: options.category,
-  }));
-
->>>>>>> ebe5a82ba2d9ed8540699cbdfb6ba25206a2e96b
 program.parse();
