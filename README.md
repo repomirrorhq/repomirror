@@ -5,6 +5,8 @@ A tool to perform transformations on code repositories with AI. Inspired by [@gh
 
 Built by [@yonom](https://github.com/yonom), [@dexhorthy](https://github.com/dexhorthy), [@lantos1618](https://github.com/lantos1618) and [@AVGVSTVS96](https://github.com/AVGVSTVS96)
 
+Read more about the project at [repomirror.md](./repomirror.md)
+
 ## Projects
 
 Some example projects maintained by repomirror:

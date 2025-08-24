@@ -1,9 +1,10 @@
 ## We Put a Coding Agent in a While Loop and It Shipped 6 Repos Overnight
 
 This weekend at the YC Agents hackathon, we asked ourselves: *what’s the weirdest way we could use a coding agent?*  
+
 Our answer: run Claude Code headlessly in a loop forever and see what happens.
 
-Turns out, what happens is: you wake up to 1,000+ commits, five ported codebases, and a weird little tool we’re calling [RepoMirror](https://github.com/repomirrorhq/repomirror). 
+Turns out, what happens is: you wake up to 1,000+ commits, six ported codebases, and a wonky little tool we’re calling [RepoMirror](https://github.com/repomirrorhq/repomirror). 
 
 ### how we got here
 
@@ -79,7 +80,7 @@ Since we were spinnig up a few loops anyways, we decided to port a few more soft
 
 The Vercel AI SDK is in typescript... but what if you could use it in python? Yeah ... [it kind of worked](https://github.com/repomirrorhq/ai-sdk-python). 
 
-![look familiar?](todo image of ai sdk fastapi)
+![AI SDK FastAPI Adapters](./assets/ai-sdk-fastapi.png)
 
 If you've ever struggled with some of the deeply-nested type constructors in the AI SDK. Well now you can struggle with them in python too.
 
@@ -149,7 +150,7 @@ After the init phase, you'll have:
 
 When you've checked out the prompt and you're ready to test it, you can run `npx repomirror sync` to do a single iteration of the loop, and you can run `npx repomirror sync-forever` to kick off the ralph infinite loop:
 
-![repomirror cli webm](...)
+[![repomirror cli webm](./assets/repomirror.webm)](https://www.youtube.com/watch?v=_GxemIzk2lo)
 
 If you wanna play with some of the other repos, they're listed on the [readme](https://github.com/repomirrorhq/repomirror?tab=readme-ov-file#projects). [better-use](https://github.com/repomirrorhq/better-use) is now on npm:
 
@@ -163,9 +164,15 @@ ai-sdk-python still has [one or two issues](https://github.com/repomirrorhq/ai-s
 
 As you might imagine, our thoughts are all a little chaotic and conflicting, so rather than a cohesive conclusion, we'll just leave with a few of our team's personal reflections on the last ~29 hours:
 
-> 
 
-> The minimalist in me is happy to see that we may be overcomplicating things. But there's another side of me that's feeling the AGI a bit and its exciting and terrifying.
+> I'm a little bit feeling the AGI and its mostly exciting but also terrifying.
 
-> crazy how well this worked. I'm never buying b2b saas again
+> The minimalist in me is happy to have hard proof that we are probably overcomplicating things. 
+
+> scary how well this worked. I'm never buying b2b saas again
+
+> clear to me that we're at the very very beginning of the exponential takeoff curve
+
+Thanks to the whole team [@yonom](https://github.com/yonom), [@dexhorthy](https://github.com/dexhorthy), [@lantos1618](https://github.com/lantos1618) and [@AVGVSTVS96](https://github.com/AVGVSTVS96), and to Geoff for the inspiration.
+
 
