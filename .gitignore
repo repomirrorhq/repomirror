@@ -1,2 +1,5 @@
 dist/
 claude_output.jsonl
+draft.md
+images/
+*-draft.md
