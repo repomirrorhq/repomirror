@@ -113,14 +113,29 @@ export async function syncForever(options?: { autoPush?: boolean }): Promise<voi
     console.log(chalk.cyan("Running ralph.sh (continuous sync)..."));
     console.log(chalk.yellow("Press Ctrl+C to stop"));
 
+    const subprocess = execa("bash", [ralphScript], {
+      stdio: "inherit",
+      cwd: process.cwd(),
+    });
+
+    // Handle graceful shutdown for subprocess
+    const signalHandler = () => {
+      console.log(chalk.yellow("\nStopping continuous sync..."));
+      subprocess.kill("SIGINT");
+    };
+
+    process.on('SIGINT', signalHandler);
+    process.on('SIGTERM', signalHandler);
+
     try {
-      await execa("bash", [ralphScript], {
-        stdio: "inherit",
-        cwd: process.cwd(),
-      });
+      await subprocess;
     } catch (error) {
+      // Clean up signal handlers
+      process.off('SIGINT', signalHandler);
+      process.off('SIGTERM', signalHandler);
+      
       if (error instanceof Error && (error as any).signal === "SIGINT") {
-        console.log(chalk.yellow("\nStopped by user"));
+        console.log(chalk.yellow("Stopped by user"));
       } else {
         console.error(
           chalk.red(

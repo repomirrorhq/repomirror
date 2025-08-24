@@ -233,21 +233,54 @@ async function triggerSync(syncAfter: boolean): Promise<void> {
       console.log(chalk.cyan("\n🔄 Starting continuous sync (ralph.sh)..."));
       console.log(chalk.yellow("Press Ctrl+C to stop"));
 
-      await execa("bash", [ralphScript], {
+      const subprocess = execa("bash", [ralphScript], {
         stdio: "inherit",
         cwd: process.cwd(),
       });
+
+      // Handle graceful shutdown for subprocess
+      const signalHandler = () => {
+        console.log(chalk.yellow("\nStopping continuous sync..."));
+        subprocess.kill("SIGINT");
+      };
+
+      process.on('SIGINT', signalHandler);
+      process.on('SIGTERM', signalHandler);
+
+      try {
+        await subprocess;
+      } finally {
+        // Clean up signal handlers
+        process.off('SIGINT', signalHandler);
+        process.off('SIGTERM', signalHandler);
+      }
     } else {
       // Check if sync.sh exists for single sync
       await fs.access(syncScript);
       console.log(chalk.cyan("\n🔄 Running single sync (sync.sh)..."));
 
-      await execa("bash", [syncScript], {
+      const subprocess = execa("bash", [syncScript], {
         stdio: "inherit",
         cwd: process.cwd(),
       });
 
-      console.log(chalk.green("✅ Sync completed"));
+      // Handle graceful shutdown for subprocess
+      const signalHandler = () => {
+        console.log(chalk.yellow("\nStopping sync..."));
+        subprocess.kill("SIGINT");
+      };
+
+      process.on('SIGINT', signalHandler);
+      process.on('SIGTERM', signalHandler);
+
+      try {
+        await subprocess;
+        console.log(chalk.green("✅ Sync completed"));
+      } finally {
+        // Clean up signal handlers
+        process.off('SIGINT', signalHandler);
+        process.off('SIGTERM', signalHandler);
+      }
     }
   } catch (error) {
     if (error instanceof Error && (error as any).signal === "SIGINT") {

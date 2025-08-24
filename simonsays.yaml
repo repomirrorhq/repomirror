@@ -1,0 +1,3 @@
+sourceRepo: ./
+targetRepo: /tmp/test-target2
+transformationInstructions: transform typescript to python

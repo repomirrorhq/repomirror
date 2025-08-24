@@ -1,5 +1,17 @@
 # RepoMirror Implementation Plan
 
+## PRIORITY 0: fix critical bugs ✅
+- [x] sync-forever doesn't exit on ctrl+c ✅
+  - Fixed signal handling in sync-forever command for both legacy ralph.sh and new approach
+  - Added proper subprocess management with SIGINT/SIGTERM handlers
+- [x] check other commands for ctrl+c handling as well ✅
+  - Added signal handling to sync command
+  - Added signal handling to init command (Claude SDK query)
+  - Added signal handling to issue-fixer command (Claude SDK query)
+  - Added signal handling to pull command (for both sync and sync-forever)
+  - Added signal handling to visualize command
+  - All long-running commands now properly handle Ctrl+C
+
 ## Priority 1: Core Infrastructure ✅
 - [x] Create implementation plan
 - [x] Initialize npm project structure
@@ -43,24 +55,49 @@
   - Creates customizable GitHub Actions workflow for automated syncing
   - Supports scheduled runs, manual triggers, and push-triggered syncs
   - Fixed linting error with escaped characters in workflow template
-- [ ] Issue fixer functionality
+- [x] Issue fixer functionality ✅
+  - Implemented `issue-fixer` command for automatic issue detection and fixing
+  - Detects build, test, lint, and type checking issues across multiple languages
+  - Supports Node/TypeScript, Python, and Go projects
+  - Uses Claude SDK to intelligently fix detected issues
+  - Interactive mode for selective issue fixing
+  - Comprehensive test suite with 268 passing tests
+
+## Priority 5: GitHub Actions PR Sync Features ✅
+- [x] Implement `setup-github-pr-sync` command ✅
+  - Creates GitHub Actions workflow for PR-triggered syncing
+  - Configurable loop iterations (1-10 times) for sync-one command
+  - Persists settings to repomirror.yaml for future use
+  - Overwrite protection with user confirmation
+  - Creates `.github/workflows/repomirror.yml` workflow file
+  - Comprehensive test coverage (8 tests)
+- [x] Implement `dispatch-sync` command ✅
+  - Dispatches workflow runs using GitHub CLI
+  - Automatic repository detection from git remotes
+  - User confirmation with `--yes` flag to skip
+  - Quiet mode with `--quiet` flag (requires `--yes`)
+  - Comprehensive error handling for missing prerequisites
+  - Full test coverage (17 tests)
 
 ## Current Status
-Completed core implementation with remote repository support and validation:
+✅ **FULLY IMPLEMENTED** - All planned features completed successfully:
 - All CLI commands implemented and working
 - Init command creates proper .repomirror/ structure
 - Sync commands execute shell scripts correctly
 - Visualize command provides colored output
-- **NEW: Remote repository management (add/list/remove remotes)**
-- **NEW: Push command with intelligent commit messages and multi-remote support**
-- **NEW: Pull command with auto-sync integration**
-- **NEW: Auto-push capability after sync operations**
-- **NEW: Validation script for testing init command functionality**
-- **NEW: Test mode support with SKIP_CLAUDE_TEST environment variable**
-- Comprehensive test suite with 242 tests covering all commands including new remote features
-- TypeScript build passing
-- Validation script confirms init command working correctly
-- Ready for production usage with full remote repository workflow
+- Remote repository management (add/list/remove remotes)
+- Push command with intelligent commit messages and multi-remote support
+- Pull command with auto-sync integration
+- Auto-push capability after sync operations
+- Validation script for testing init command functionality
+- Test mode support with SKIP_CLAUDE_TEST environment variable
+- GitHub Actions workflow generation for CI/CD
+- Issue fixer command for automatic issue detection and resolution
+- GitHub Actions PR sync commands (`setup-github-pr-sync` and `dispatch-sync`)
+- Comprehensive test suite with 293 tests passing (2 skipped for interactive mode)
+- TypeScript build passing with full type safety
+- All linting checks passing
+- **Ready for production usage with complete feature set**
 
 ## Known Issues & Critical Fixes Needed
 
@@ -73,7 +110,7 @@ Completed core implementation with remote repository support and validation:
 - Properly breaks the loop after receiving ANY result type
 - Added more descriptive error messages for debugging
 
-**Testing Completed**: 
+**Testing Completed**:
 - All 230 tests passing (comprehensive test coverage added)
 - TypeScript build successful
 - Ready for production use

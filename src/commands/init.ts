@@ -368,10 +368,23 @@ You should follow the format EXACTLY, filling in information based on what you l
 
   let result = "";
   let toolCallCount = 0;
+  let queryAborted = false;
   
-  for await (const message of query({
-    prompt: metaPrompt,
-  })) {
+  // Handle graceful shutdown during Claude SDK query
+  const signalHandler = () => {
+    console.log(chalk.yellow("\n\nStopping prompt generation..."));
+    queryAborted = true;
+    process.exit(0);
+  };
+
+  process.on('SIGINT', signalHandler);
+  process.on('SIGTERM', signalHandler);
+  
+  try {
+    for await (const message of query({
+      prompt: metaPrompt,
+    })) {
+      if (queryAborted) break;
     // Stream tool calls to user in a compact format
     if (message.type === "assistant" && (message as any).message?.content?.[0]?.name) {
       const toolName = (message as any).message.content[0].name;
@@ -415,6 +428,11 @@ You should follow the format EXACTLY, filling in information based on what you l
       result = (message as any).result || "";
       break;
     }
+  }
+  } finally {
+    // Clean up signal handlers
+    process.off('SIGINT', signalHandler);
+    process.off('SIGTERM', signalHandler);
   }
 
   if (toolCallCount > 0) {

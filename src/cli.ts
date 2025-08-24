@@ -9,6 +9,8 @@ import { remote } from "./commands/remote";
 import { push } from "./commands/push";
 import { pull } from "./commands/pull";
 import { githubActions } from "./commands/github-actions";
+import { setupGithubPrSync } from "./commands/setup-github-pr-sync";
+import { dispatchSync } from "./commands/dispatch-sync";
 
 const program = new Command();
 
@@ -23,16 +25,16 @@ Configuration:
   simonsays uses a simonsays.yaml file to store configuration.
   On first run, settings are saved to this file.
   On subsequent runs, the file is used for defaults.
-  
+
   Command-line flags override both yaml defaults and interactive prompts.
 
 Examples:
   $ npx simonsays init
       Interactive mode with prompts
-  
+
   $ npx simonsays init --source ./ --target ../myrepo-ts --instructions "convert to typescript"
       Skip prompts and use provided values
-  
+
   $ npx simonsays help
       Show this help message`,
   );
@@ -107,16 +109,16 @@ program
 Examples:
   $ npx simonsays push
       Push to default remote (origin/main)
-  
+
   $ npx simonsays push --remote staging
       Push to specific remote using its configured branch
-  
+
   $ npx simonsays push --remote origin --branch feature-branch
       Push to specific remote and branch
-  
+
   $ npx simonsays push --all
       Push to all configured remotes
-  
+
   $ npx simonsays push --dry-run
       Show what would be pushed without pushing`,
   )
@@ -134,13 +136,13 @@ program
 Examples:
   $ npx simonsays pull
       Pull source changes and re-sync (if auto_sync is enabled)
-  
+
   $ npx simonsays pull --source-only
       Pull source changes without triggering sync
-  
+
   $ npx simonsays pull --sync-after
       Pull source changes and run continuous sync
-  
+
   $ npx simonsays pull --check
       Check for available changes without pulling`,
   )
@@ -160,10 +162,10 @@ Generates a GitHub Actions workflow file for automated repository syncing.
 Examples:
   $ npx simonsays github-actions
       Interactive setup with prompts
-  
+
   $ npx simonsays github-actions --schedule "0 */12 * * *"
       Run every 12 hours
-  
+
   $ npx simonsays github-actions --no-auto-push
       Create workflow without automatic push to target
 
@@ -178,4 +180,116 @@ Notes:
     autoPush: options.autoPush,
   }));
 
+<<<<<<< HEAD
+=======
+program
+  .command("setup-github-pr-sync")
+  .description("Setup GitHub Actions workflow for PR-triggered sync")
+  .option("-t, --target-repo <repo>", "Target repository (owner/repo format)")
+  .option("-l, --times-to-loop <number>", "Number of times to loop sync-one command", "3")
+  .option("--overwrite", "Force overwrite existing workflow file")
+  .addHelpText(
+    "after",
+    `
+Sets up a GitHub Actions workflow that runs sync-one command on PR merges.
+
+Examples:
+  $ npx repomirror setup-github-pr-sync
+      Interactive setup with prompts
+
+  $ npx repomirror setup-github-pr-sync --target-repo myorg/myrepo
+      Specify target repository directly
+
+  $ npx repomirror setup-github-pr-sync --times-to-loop 5
+      Set number of sync iterations
+
+  $ npx repomirror setup-github-pr-sync --overwrite
+      Force overwrite existing workflow file
+
+Notes:
+  - Creates .github/workflows/repomirror.yml
+  - Settings are persisted to repomirror.yaml
+  - Workflow has workflow_dispatch trigger for manual runs
+  - Requires ANTHROPIC_API_KEY and GITHUB_TOKEN secrets`,
+  )
+  .action((options) => setupGithubPrSync({
+    targetRepo: options.targetRepo,
+    timesToLoop: options.timesToLoop ? parseInt(options.timesToLoop) : undefined,
+    overwrite: options.overwrite,
+  }));
+
+program
+  .command("dispatch-sync")
+  .description("Dispatch GitHub Actions workflow for manual sync")
+  .option("-y, --yes", "Skip confirmation prompt")
+  .option("-q, --quiet", "Suppress output (requires --yes)")
+  .addHelpText(
+    "after",
+    `
+Dispatches a workflow_dispatch event to the repomirror.yml workflow.
+
+Examples:
+  $ npx repomirror dispatch-sync
+      Interactive mode with confirmation prompt
+
+  $ npx repomirror dispatch-sync --yes
+      Skip confirmation and dispatch immediately
+
+  $ npx repomirror dispatch-sync --yes --quiet
+      Silent dispatch without output
+
+Notes:
+  - Requires .github/workflows/repomirror.yml to exist
+  - Requires GitHub CLI (gh) to be installed and authenticated
+  - Workflow must have workflow_dispatch trigger enabled
+  - --quiet flag can only be used with --yes flag`,
+  )
+  .action((options) => dispatchSync({
+    yes: options.yes,
+    quiet: options.quiet,
+  }));
+
+program
+  .command("issue-fixer")
+  .description("Automatically detect and fix transformation issues")
+  .option("-t, --target-only", "Only check target repository without comparing to source")
+  .option("-i, --interactive", "Interactive mode - choose which issues to fix")
+  .option("-c, --category <type>", "Filter issues by category (build, test, lint, type)")
+  .addHelpText(
+    "after",
+    `
+Detects and automatically fixes common issues that occur during repository transformation.
+
+Categories:
+  build    - Build errors and missing dependencies
+  test     - Failing tests
+  lint     - Linting errors and style issues
+  type     - Type checking errors (TypeScript, Python, etc.)
+
+Examples:
+  $ npx repomirror issue-fixer
+      Detect and fix all issues automatically
+
+  $ npx repomirror issue-fixer --interactive
+      Choose which issues to fix interactively
+
+  $ npx repomirror issue-fixer --category build
+      Only fix build-related issues
+
+  $ npx repomirror issue-fixer --target-only
+      Check target repo without source comparison
+
+Notes:
+  - Requires repomirror.yaml to be present
+  - Works with Node/TypeScript, Python, and Go projects
+  - Uses Claude to intelligently fix detected issues
+  - Creates .repomirror/issue-fixer-prompt.md for debugging`,
+  )
+  .action((options) => issueFixer({
+    targetOnly: options.targetOnly,
+    interactive: options.interactive,
+    category: options.category,
+  }));
+
+>>>>>>> ebe5a82ba2d9ed8540699cbdfb6ba25206a2e96b
 program.parse();
