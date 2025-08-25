@@ -268,7 +268,7 @@ async function performPreflightChecks(targetRepo: string): Promise<void> {
     console.log(chalk.white("4. Testing Claude Code configuration..."));
     const claudeSpinner = ora("   Running Claude Code test command").start();
     try {
-      const { stdout } = await execa("claude", ["-p", "say hi"], {
+      const { stdout } = await execa("claude", ["-p", "say hi with more than one word"], {
         timeout: 30000, // 30 second timeout
         input: "", // Provide empty stdin to prevent claude from waiting
       });
