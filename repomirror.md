@@ -178,4 +178,9 @@ As you might imagine, our thoughts are all a little chaotic and conflicting, so 
 
 Thanks to the whole team [@yonom](https://x.com/simonfarshid) and [@AVGVSTVS96](https://x.com/AVGVSTVS96) from [assistant-ui](https://github.com/assistant-ui), [@dexhorthy](https://x.com/dexhorthy) from [HumanLayer](https://humanlayer.dev), [@Lantos1618](https://x.com/Lantos1618) from [github.gg](https://github.gg), and to [Geoff](https://x.com/GeoffreyHuntley) for the inspiration.
 
+and yeah, we forgot to get a team photo
+
+<img width="1166" height="292" alt="Screenshot 2025-08-25 at 9 03 34 AM" src="https://github.com/user-attachments/assets/e19c3132-12dd-45b6-b470-f4b5281dd609" />
+
+
 
